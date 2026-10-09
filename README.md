@@ -11,6 +11,22 @@ commodity. The harness is the part that is yours.
 
 ## Which one do you want?
 
+**Building websites, apps or prototypes with AI agents? Use the universal
+harness.** It drops into your code repository, ready to go, and keeps agents
+working to a standard: specs before code, checks that must pass before work
+counts as done, protected files they cannot quietly change, and reviews that
+catch what looks right but is not. Works with Claude Code, Cursor and Copilot,
+on any stack.
+
+**Want a solid AI working environment for yourself or your team, whatever the
+work? Start with the harness kit.** Instead of handing you a fixed setup, it
+builds one around how you already work — design, marketing, business
+development, project work, code, or something it has not seen before. Describe your work, or point it at the docs, prompts,
+Slack or Notion you already have, and it designs a harness that fits that.
+
+Not sure? If the work lives in a code repository, start with the universal
+harness. For everything else, start with the kit.
+
 | | **Universal harness** — [`universal/`](universal/) | **Harness starter kit** — [`kit/`](kit/) |
 |---|---|---|
 | **What it is** | A complete, ready-to-install harness for software projects, on any stack | A *constructor* that designs and builds a harness around your own team or workspace |
