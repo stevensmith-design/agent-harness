@@ -1,0 +1,22 @@
+{
+  "kind": "EvidenceRecord",
+  "workItemId": "PROJ-118",
+  "evidenceType": "governed_review",
+  "producerActorId": "agent:builder-1",
+  "actorAction": {
+    "actorId": "agent:reviewer-7",
+    "principalKind": "agent",
+    "at": "2026-08-21T09:31:00Z",
+    "provenance": {
+      "cleanContext": true,
+      "inputAccess": "read_only",
+      "resultEmission": "governed_output_only"
+    }
+  },
+  "result": "pass",
+  "detail": "APPROVE \u2014 0 blocking, 1 advisory",
+  "findingIds": [
+    "F-1"
+  ],
+  "trust": "independent_reviewer"
+}

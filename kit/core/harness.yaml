@@ -1,0 +1,45 @@
+# harness.yaml — the single adaptation point.
+#
+# Everything instance-specific lives here. Every key below is read by a script
+# or explained in README.md — `scripts/gates/dead-config.sh` enforces that.
+# If you add a key, teach something to read it in the same change.
+
+name: "{{HARNESS_NAME}}"
+kit_version: "0.14.0"
+
+# template | instance — doctor tolerates unfilled placeholders in template mode and
+# fails on them in instance mode. Flip this last, when the fill-in is done.
+mode: template
+
+owner: "{{OWNER}}"
+approver: "{{APPROVER}}"
+
+# greenfield | scattered | overlay — decided by the kit's ./detect.sh, which
+# fails closed toward the motion that writes least.
+#   greenfield — nothing exists yet
+#   scattered  — AI material exists, it is yours, nothing organises it
+#   overlay    — it exists and belongs to someone else
+motion: greenfield
+
+# repository | workspace — see SUBSTRATES.md. Default repository.
+substrate: repository
+
+# The file that loads into every session. Read by scripts/doctor.sh.
+# Its BUDGET is not here: it belongs to the whole always-loaded set and is
+# declared in loading-order.md, which scripts/check-budget.sh reads.
+constitution: AGENTS.md
+
+# Where surfaces and their blast radius are declared.
+# Read by scripts/doctor.sh.
+surfaces_file: config/surfaces.tsv
+
+# The integration branch. Read by scripts/gates/harness-content-split.sh.
+main_branch: main
+
+# Domain packs applied to this instance: dev · design · business-development
+# · marketing · project. Listed for the record and read by the build skill.
+packs: []
+
+# Runtimes this harness must work under. Informational — the harness itself is
+# written runtime-agnostic, and this only decides what gets generated.
+runtimes: [claude-code]

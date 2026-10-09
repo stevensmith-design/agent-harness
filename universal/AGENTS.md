@@ -1,0 +1,53 @@
+# AGENTS.md
+
+<!-- CANONICAL. Every other instruction file is generated from or cites this one.
+     Budget: 60 lines of rules. Every rule must trace to a real failure or an
+     external constraint. If you cannot name the failure, it is not a rule yet —
+     put it in docs/ instead. Regenerate tool variants with `make harness-sync`. -->
+
+`<product>` is a `<stack>` project. Source in `<src>/`, tests in `<tests>/`.
+Generated code (codegen output, API clients, build output) is a build product — never hand-edit it.
+
+## Authority chain — highest wins, no asking
+
+1. Law, security, accessibility, contractual constraints
+2. Company policy
+3. Product/system design: accepted ADRs in `docs/decisions/`, design tokens, shipped components
+4. Approved project decisions and the active spec in `specs/`
+5. Platform / framework conventions
+6. Skill and tool defaults
+
+## Non-negotiables
+
+- **Run `make check` before claiming anything works.** "It should work" is not evidence.
+- **Never edit the harness while doing product work** — `AGENTS.md`, `.agents/**`, `.github/workflows/**`, `docs/decisions/**` change only via `/harness-retro` or an explicit request.
+- **Never access or disclose secrets or identifiable personal data.** Do not open `.env`, credential, key, or service-account files; use sample key names and masked formats only.
+- **Smallest diff that satisfies the spec.** No speculative abstraction, drive-by refactors, or dependency installs without explicit operator approval and `/harness-dependency-intake`.
+- **Every fallible call is handled** — caught, logged, surfaced to the user, and covered by a test.
+- **Stop and report on gate failure.** Never work around a failing check, disable a test, or loosen a lint rule to go green.
+- **Never commit or push to `main`.** Work on a short-lived branch; merge by PR after an independent review.
+- **Ambiguity is marked, not guessed.** Write `[NEEDS CLARIFICATION: question]` in the spec and stop.
+
+## Instruction map — one owner per rule
+
+| Need | Read |
+|---|---|
+| Path-scoped constraints | `.agents/rules/*.md` (`paths:` frontmatter) |
+| A repeatable procedure | `.agents/skills/<name>/SKILL.md` |
+| Why a decision was made | `docs/decisions/NNNN-*.md` (MADR) |
+| What we are building now | `specs/<active>/spec.md` → `plan.md` → `tasks.md` |
+| Detailed policy / rationale | `docs/` |
+| Durable project memory | `.agents/memory/MEMORY.md` |
+| What we agreed to build, and its status | `docs/product/requirements.md` |
+| What must always be true, and which side enforces it | `docs/product/domain-rules.md` |
+| A product-level decision and its knock-ons | `docs/product/decisions.md` |
+| Every command | `make help` |
+| How we branch, commit, merge | `.agents/rules/git-flow.md` |
+
+## Commands
+
+`make setup` · `make dev` · `make dev-mock` · `make check` (lint + format + typecheck + test + every gate) · `make verify` · `make harness-sync` · `make harness-verify` · `make gate-selftest`
+
+## Definition of done
+
+`make check` passes · the diff matches the spec · an independent reviewer (not the producer) signed off · evidence in `.agents/runs/` says pass — `not_verified` is never done.

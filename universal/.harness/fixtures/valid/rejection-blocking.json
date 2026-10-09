@@ -1,0 +1,9 @@
+{
+  "kind": "Rejection",
+  "id": "R-1",
+  "workItemId": "PROJ-119",
+  "rejectorAction": { "actorId": "human:steven", "principalKind": "human", "at": "2026-08-21T10:20:00Z" },
+  "reason": "Deletes workspace data with no confirmation step; the spec required one.",
+  "findingIds": ["F-9"],
+  "returnsToStage": "implement"
+}

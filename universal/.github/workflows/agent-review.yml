@@ -1,0 +1,39 @@
+name: agent-review
+# Probabilistic gate. Runs only after the deterministic gates are green — never
+# spend a model call on something a script already decided.
+#
+# This uses Claude Code's action; if your team is on another agent, swap the
+# step and keep the shape. The review is comment-only: the reviewer must not be
+# able to push a fix, or it stops being an independent review.
+
+on:
+  workflow_run:
+    workflows: [gates]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # Checks out the BASE repository, never the PR head. A reviewer that
+      # checks out contributor code is running it with this job's token — and
+      # this job can write PR comments. The diff is fetched, not executed.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_branch && github.repository == github.event.workflow_run.head_repository.full_name && github.event.workflow_run.head_sha || github.event.repository.default_branch }}
+          persist-credentials: false
+      - uses: anthropics/claude-code-action@dcb57747bfceeaa1fa72638cae52295d1d853d4a # v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request as the `reviewer` subagent defined in
+            .claude/agents/reviewer.md. Read AGENTS.md and the matching rules in
+            .agents/rules/ first. Post inline findings and a single verdict.
+            Do not edit any file.
+          claude_args: --allowedTools "Read,Glob,Grep,Bash(git diff:*),Bash(git log:*)"

@@ -1,0 +1,4 @@
+# Files that are gitignored but must exist inside every agent worktree.
+# gitignore syntax. Keeps `make check` runnable in an isolated worktree.
+.env
+.claude/settings.local.json

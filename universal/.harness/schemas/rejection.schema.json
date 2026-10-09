@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://harness.local/schemas/rejection.schema.json",
+  "title": "Rejection",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "Rejection" },
+    "id": { "type": "string" },
+    "workItemId": { "type": "string" },
+    "rejectorAction": {
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string", "pattern": "^(human|agent|runner):[a-z0-9][a-z0-9._-]{0,62}$" },
+        "principalKind": { "enum": ["human", "agent", "deterministic_runner"] },
+        "at": { "type": "string" }
+      },
+      "required": ["actorId", "principalKind", "at"],
+      "additionalProperties": false
+    },
+    "reason": { "type": "string", "minLength": 5 },
+    "findingIds": { "type": "array", "items": { "type": "string" } },
+    "returnsToStage": { "type": "string" }
+  },
+  "required": ["kind", "id", "workItemId", "rejectorAction", "reason", "returnsToStage"],
+  "additionalProperties": false
+}

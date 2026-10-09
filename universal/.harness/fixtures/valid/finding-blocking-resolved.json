@@ -1,0 +1,12 @@
+{
+  "kind": "Finding",
+  "id": "F-1",
+  "workItemId": "PROJ-118",
+  "severity": "advisory",
+  "category": "test-coverage",
+  "location": "src/settings/leave-workspace.ts:64",
+  "summary": "The last-owner error path has no test.",
+  "failureScenario": "A sole owner taps Leave; the guard throws and the screen shows a blank error with no recovery.",
+  "status": "resolved",
+  "resolvedBy": "agent:builder-1"
+}

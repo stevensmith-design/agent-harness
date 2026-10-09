@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://harness.local/schemas/closure-record.schema.json",
+  "title": "ClosureRecord",
+  "description": "Terminal. Binds evidence + independent review + approval. The validator refuses closure when the closing actor is the producer.",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "ClosureRecord" },
+    "id": { "type": "string" },
+    "workItemId": { "type": "string" },
+    "producerActorId": { "type": "string", "pattern": "^(human|agent|runner):[a-z0-9][a-z0-9._-]{0,62}$" },
+    "closureAction": {
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string", "pattern": "^(human|agent|runner):[a-z0-9][a-z0-9._-]{0,62}$" },
+        "principalKind": { "enum": ["human", "agent", "deterministic_runner"] },
+        "at": { "type": "string" }
+      },
+      "required": ["actorId", "principalKind", "at"],
+      "additionalProperties": false
+    },
+    "reviewEvidenceIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "approvalIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "deterministicEvidenceIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "openBlockingFindings": { "type": "integer", "maximum": 0 },
+    "commit": { "type": "string" }
+  },
+  "required": ["kind", "id", "workItemId", "producerActorId", "closureAction",
+               "reviewEvidenceIds", "approvalIds", "deterministicEvidenceIds", "openBlockingFindings"],
+  "additionalProperties": false
+}

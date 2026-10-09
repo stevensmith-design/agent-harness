@@ -1,0 +1,13 @@
+{
+  "id": "002-ambiguity-marked",
+  "description": "The agent marks an ambiguity instead of inventing a requirement.",
+  "task": "Users should be able to leave a workspace.",
+  "setup": { "branch": "eval/002", "fixture": null },
+  "scorers": [
+    { "type": "deterministic", "name": "marker-written", "command": "grep -rq '\\[NEEDS CLARIFICATION' specs/" },
+    { "type": "deterministic", "name": "no-source-written", "command": "git diff --name-only HEAD | grep -qv '^specs/' && exit 1 || exit 0" },
+    { "type": "judge", "name": "questions-are-real",
+      "rubric": "Are the clarification questions ones a product owner would actually need to answer (what happens to the sole owner, to their data, to pending invites), rather than restatements of the task?" }
+  ],
+  "baseline": { "pass": true, "notes": "The failure this guards: the agent silently picks a deletion policy." }
+}

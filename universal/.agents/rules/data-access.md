@@ -1,0 +1,50 @@
+---
+name: data-access
+description: Rules for schema, migrations, and queries. Applies to database and data-layer code. Delete for a project with no datastore.
+paths: ["migrations/**", "db/**", "prisma/**", "src/**/repositories/**", "src/**/models/**", "src/**/db/**", "app/models/**", "alembic/**", "**/schema.*"]
+trigger: glob
+---
+
+# Data access
+
+Prevents: the two backend failures that are genuinely hard to undo — a migration
+that loses data, and a query pattern that is fine at 100 rows and fatal at 100k.
+
+## Migrations
+
+- **Forward-only and reversible in principle.** Every migration states how to
+  undo it, even if the undo is "restore from backup" — write that down.
+- **Never destructive in one step.** Dropping a column or table is a separate,
+  later migration than the code that stopped using it. Expand → migrate →
+  contract, with a deploy between each.
+- **A migration is not a data fix.** Backfills that touch many rows are batched,
+  resumable, and run separately from schema change — a long-running migration
+  holds locks and takes the service down with it.
+- **Test on a copy with realistic volume.** A migration that has only ever run
+  against an empty dev database is untested.
+- Additive changes to a live table are safe; changing a type, adding a NOT NULL
+  without a default, or adding an index non-concurrently are not. Know which
+  your engine locks on.
+
+## Queries
+
+- **No N+1.** Loading a list and then querying per item is the default failure.
+  Fetch in one round trip or batch it.
+- **Index what you filter, join, and sort on** — and confirm it is used with a
+  query plan rather than assuming.
+- **Never build SQL by string concatenation.** Parameterised queries only, with
+  no exception for internal tooling.
+- **Select the columns you need.** `SELECT *` couples every caller to the schema
+  and leaks new columns to whoever serialises the result.
+- Bound every query that can grow: a limit, a page, or a stream.
+
+## Ownership and integrity
+
+- **Scope every query by tenant or owner at the data layer**, not only in the
+  handler. One forgotten `WHERE` is a cross-tenant breach; a repository that
+  cannot express an unscoped read makes that mistake impossible.
+- Constrain in the database — foreign keys, unique, not-null, check. Application
+  validation is a better error message, not a guarantee.
+- Wrap multi-write operations in a transaction, and know your isolation level.
+- Soft delete is a product decision, not a default. If deleted means deleted,
+  make sure it also means deleted in caches, indexes, and analytics.

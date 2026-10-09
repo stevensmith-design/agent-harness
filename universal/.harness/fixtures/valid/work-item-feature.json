@@ -1,0 +1,10 @@
+{
+  "kind": "WorkItem",
+  "id": "PROJ-118",
+  "title": "Let a member leave a workspace from settings",
+  "type": "feature",
+  "surface": "app",
+  "risk": "medium",
+  "specPath": "specs/012-leave-workspace/spec.md",
+  "authority": { "requestedBy": "human:steven", "reference": "PROJ-118" }
+}

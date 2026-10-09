@@ -1,0 +1,15 @@
+{
+  "kind": "EvidenceRecord",
+  "workItemId": "PROJ-118",
+  "evidenceType": "deterministic_validation",
+  "producerActorId": "agent:builder-1",
+  "actorAction": {
+    "actorId": "runner:ci",
+    "principalKind": "deterministic_runner",
+    "at": "2026-08-21T09:14:00Z"
+  },
+  "result": "pass",
+  "detail": "make check \u2014 lint, format, typecheck, test, tokens, secrets",
+  "commit": "9f1c2ab",
+  "trust": "deterministic_runner"
+}

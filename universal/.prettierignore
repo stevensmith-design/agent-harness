@@ -1,0 +1,34 @@
+# The harness formats its own files. Do not let the project's Prettier near them.
+#
+# Three reasons, all of which were live bugs:
+#   1. Generated views are byte-compared by `make harness-sync-check` and
+#      `make ci-gen-check`. Reformatting them makes the drift check fail, and
+#      regenerating them makes format-check fail — a cycle with no exit.
+#   2. Prettier rewrites YAML frontmatter in a rule file, which silently
+#      un-loads the rule. That includes protected-harness.md, the rule that
+#      stops agents editing the harness.
+#   3. Instruction files are line-budgeted; reflowing them changes the count.
+#
+# Your own source, tests and config are NOT in here, and are formatted normally.
+AGENTS.md
+CLAUDE.md
+README.md
+HARNESS-GUIDE.md
+HARNESS-MANIFEST.md
+harness.config.yaml
+skills-lock.json
+.mcp.json.example
+.env.sample
+.agents/
+.claude/
+.cursor/
+.github/copilot-instructions.md
+.github/instructions/
+.github/workflows/
+.github/pull_request_template.md
+.githooks/
+.harness/
+scripts/
+docs/
+evals/
+specs/000-template/

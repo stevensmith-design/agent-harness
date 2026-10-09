@@ -1,0 +1,46 @@
+{
+  "$comment": "Vendored capability skills, pinned by commit SHA + content hash. Workflow skills we author live in .agents/skills/ and are NOT listed here. Skills vendored from a non-git source are pinned by content hash alone (pin: content-hash) — `make skills-verify` still detects an in-place edit, which is what stops a vendored copy drifting from its source unnoticed. Add with `make skills-add`; verify with `make skills-verify`.",
+  "version": 1,
+  "skills": {
+    "ia-review": {
+      "source": "bundled",
+      "pin": "content-hash",
+      "ref": null,
+      "vendoredAt": "2026-08-23",
+      "license": "MIT",
+      "licenseNote": "Authored by the harness author and bundled under this repository's MIT licence.",
+      "contentHash": "3d663faffba9072f4f526498901c7e1c75e6b00c70d12e7c856006e50a334daf",
+      "note": "Portable as-is; no external dependencies."
+    },
+    "ui-design-system": {
+      "source": "bundled",
+      "pin": "content-hash",
+      "ref": null,
+      "vendoredAt": "2026-08-23",
+      "license": "MIT",
+      "licenseNote": "Authored by the harness author and bundled under this repository's MIT licence.",
+      "contentHash": "4c2e709a070e3226ab335c22f97f1622fb86d52b7be9d3647529b5729ebce557",
+      "note": "Owns DESIGN.md + tokens.json. Its validator was lifted to scripts/validate-tokens.py so the design-system gate and the skills share one copy."
+    },
+    "ui-design-principles": {
+      "source": "bundled",
+      "pin": "content-hash",
+      "ref": null,
+      "vendoredAt": "2026-08-23",
+      "license": "MIT",
+      "licenseNote": "Authored by the harness author and bundled under this repository's MIT licence.",
+      "contentHash": "dcb44ab858627254ffd24d05504e55ba969cde1cbb11588678bf7f1a64cb27d0",
+      "note": "Build-time guardrail. Sibling paths rewritten to fixed harness paths; path-discovery and degrade-silently language removed."
+    },
+    "ui-design-review": {
+      "source": "bundled",
+      "pin": "content-hash",
+      "ref": null,
+      "vendoredAt": "2026-08-23",
+      "license": "MIT",
+      "licenseNote": "Authored by the harness author and bundled under this repository's MIT licence.",
+      "contentHash": "e4fd06da8acc991a558cb611dbb9399a4cb6c0c74923c70f67428d404b42b38c",
+      "note": "Per-screen/per-PR gate. Sibling paths rewritten; references to the upstream tests/ harness removed."
+    }
+  }
+}

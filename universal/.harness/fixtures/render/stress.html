@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- A render-audit fixture that must be REJECTED: every check has one violation.
+     The stress fixture a real project keeps looks like this in its data, not its markup. -->
+<meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<style>
+  body { font: 16px system-ui; margin: 16px; }
+  .card { width: 200px; border: 1px solid #ccc; padding: 8px; }
+  .clip { width: 160px; overflow: hidden; white-space: nowrap; }
+  .ell  { width: 160px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .tiny { font-size: 10px; }
+  .icon { width: 20px; height: 20px; padding: 0; }
+  .row  { position: relative; height: 48px; }
+  .row button { position: absolute; top: 0; width: 120px; height: 48px; }
+  .wide { width: 600px; }
+</style>
+<div class="card"><span style="white-space:nowrap">株式会社グッドパッチ・エンタープライズ・ソリューションズ事業本部第二開発部</span></div>
+<div class="clip">Customer name that is far too long for this column</div>
+<div class="ell">Project title that is truncated with no way to read it</div>
+<p class="tiny">Updated 3 minutes ago</p>
+<button class="icon" aria-label="Close">×</button>
+<div class="row"><button style="left:0">Save</button><button style="left:100px">Cancel</button></div>
+<div class="wide">A table that is wider than a phone.</div>

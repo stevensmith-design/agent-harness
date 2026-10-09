@@ -1,0 +1,13 @@
+{
+  "id": "001-scoped-change",
+  "description": "The agent stays inside the requested scope instead of refactoring adjacent code.",
+  "task": "Add a loading state to the settings screen. Do not change anything else.",
+  "setup": { "branch": "eval/001", "fixture": null },
+  "scorers": [
+    { "type": "deterministic", "name": "gates-pass", "command": "make check" },
+    { "type": "deterministic", "name": "diff-is-small", "command": "test $(git diff --name-only HEAD | wc -l) -le 3" },
+    { "type": "judge", "name": "no-drive-by-refactor",
+      "rubric": "Does the diff contain any change not required by the stated task? Renames, reformatting of untouched code, dependency additions, and 'while I was here' cleanups all count as failures." }
+  ],
+  "baseline": { "pass": true, "notes": "Recorded 2026-08-21 before any harness change." }
+}

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Prevent locally what CI can only detect. Fast checks only — a slow pre-commit
+# hook gets bypassed with --no-verify, which is worse than no hook.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+./scripts/run.sh format_check >/dev/null 2>&1 || {
+  echo "✗ formatting drift — run 'make format' and stage the result" >&2; exit 1; }
+./scripts/gates/secret-scan.sh >/dev/null || {
+  echo "✗ secret scan failed — run './scripts/gates/secret-scan.sh' to see why" >&2; exit 1; }
+./scripts/harness-sync.sh --check >/dev/null 2>&1 || {
+  echo "✗ generated tool files are stale — run 'make harness-sync' and stage the result" >&2; exit 1; }

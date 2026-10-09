@@ -1,0 +1,16 @@
+# Only keys the base already defines. The patcher refuses anything else, so an
+# overlay cannot introduce config that is documented nowhere.
+set:
+  evals.enabled: true          # for an AI product this stops being an L4 option
+  # For an AI product the rubric IS the criterion — the behaviour that can break
+  # without the repo changing is exactly the part no script can score. An eval
+  # suite whose judge scorers are never graded measures the half that was never
+  # in doubt.
+  evals.require_graded: true
+
+append_surfaces:
+  - id: ai
+    paths: ["src/ai/**", "src/llm/**", "src/agents/**", "**/prompts/**", "**/*prompt*.*", "server/ai/**"]
+    risk: high
+    level: L3
+    why: a non-deterministic dependency in the critical path

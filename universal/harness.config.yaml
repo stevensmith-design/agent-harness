@@ -1,0 +1,277 @@
+# harness.config.yaml — the single adaptation point.
+#
+# Everything project-specific lives here. The Makefile, the gate scripts, the
+# sync generator and the harness verifier all read this file. Fill it in once
+# and the rest of the harness follows. Nothing else in the harness should need
+# to know your stack.
+#
+# Run `make harness-sync` after any change here.
+
+harness:
+  version: 1.16.0
+  # Is this the harness's OWN repository, or a repo that installed it?
+  #
+  # It matters for exactly one check. scripts/gates/skill-namespace.sh requires
+  # every harness-authored skill to be named harness-* — but that rule is the
+  # HARNESS's to keep, not yours. A skill called `review` under .agents/skills/
+  # is YOUR review skill, and the harness has no business renaming it.
+  #
+  # scripts/install.sh sets this to false in the target, so the namespace check
+  # becomes a maintainer check here and stays silent there. The other two checks
+  # in that gate — a skill's declared name matching its directory, and every
+  # referenced skill path resolving — are true everywhere and always run.
+  #
+  # reader: scripts/gates/skill-namespace.sh
+  authored_here: true
+  # Which adapter provides the real commands: scripts/adapters/<adapter>.sh
+  # Shipped: generic | react-web | react-native | flutter | node-api | python-api
+  # Full-stack repo? Pick the adapter for the part this harness instance guards,
+  # or run two instances (one per package) in a monorepo — surfaces below carry
+  # the per-area risk either way.
+  adapter: generic
+  # Maturity rung this repo targets. See HARNESS-GUIDE.md §5.
+  #   L1 standardised | L2 guarded | L3 orchestrated | L4 learning
+  level: L2
+  # Which tool-specific files `make harness-sync` generates.
+  targets: [claude, cursor, copilot]
+  # Total lines an agent reads BEFORE it has looked at a single file of yours.
+  # The budget belongs to the SET, not to any one file in it: AGENTS.md plus
+  # CLAUDE.md plus every rule whose frontmatter says `trigger: always`. Capping
+  # only AGENTS.md is evadable without anyone deciding to evade it — move a
+  # paragraph into an always-loaded rule with headroom and the check goes green
+  # while the agent reads exactly the same words.
+  always_loaded_budget: 200
+
+project:
+  name: <product>
+  stack: <stack>            # e.g. "Next.js 15 + TypeScript", "Flutter 3.x", "Expo SDK 52"
+  description: <one line>
+  src: src                  # handwritten source root
+  tests: tests              # test root
+  generated:                # never hand-edited; globs
+    - "**/*.g.*"
+    - "**/generated/**"
+
+surfaces:
+  # A surface is a lane of work with its own risk level and its own rung.
+  # Delete the ones you do not have. `risk` and `level` are READ AND ENFORCED by
+  # scripts/gates/policy.sh (make check-policy): the change is resolved to the
+  # surfaces it touches, and the highest risk and rung among them apply.
+  #   risk: high  => CI requires a recorded human approval before merge
+  #   level: L3   => governance.enabled must be true, or the change is refused
+  - id: app
+    paths: ["src/**"]
+    risk: medium
+    level: L2
+  - id: auth
+    paths: ["src/**/auth/**", "src/**/session/**"]
+    risk: high          # high risk => human approval required before merge
+    level: L3
+  - id: api
+    paths: ["src/api/**", "src/routes/**", "server/**", "app/api/**", "docs/api-proposal/**"]
+    risk: high          # a contract other people depend on
+    level: L2
+  - id: data
+    paths: ["migrations/**", "db/**", "prisma/**", "src/**/repositories/**", "alembic/**"]
+    risk: high          # the only changes with no undo
+    level: L3
+  - id: docs
+    paths: ["docs/**", "README.md"]
+    risk: low
+    level: L1
+
+policy:
+  # true => a changed file matching no surface fails check-policy. Turn this on
+  # once your surfaces really do cover the repo; it is the difference between
+  # "these lanes are described" and "every change is in a known lane".
+  surfaces_exhaustive: false
+
+git:
+  # Branching model. Trunk-based: short-lived branches off `main`, squash-merged
+  # via PR, releases are tags. The rule is in .agents/rules/git-flow.md; this
+  # block is what makes it checkable (scripts/gates/branch-hygiene.sh).
+  model: trunk-based
+  main_branch: main
+  # Branch names must match this POSIX extended regex. Single-quoted so YAML
+  # leaves the backslashes alone.
+  # Uppercase is allowed so ticket keys (PROJ-118) survive; the descriptive
+  # tail should still be lowercase-hyphenated.
+  branch_pattern: '^(feat|fix|chore|docs|refactor|spike)/[A-Za-z0-9][A-Za-z0-9._/-]*$'
+  # Branches exempt from the pattern (long-lived infrastructure, CI refs).
+  branch_exempt: ['main', 'master', 'HEAD', 'gh-pages']
+  # Commit subjects must match this. Set to '' to skip the commit check.
+  commit_pattern: '^(feat|fix|chore|docs|refactor|spike|revert)(\([a-z0-9._-]+\))?!?: .{1,72}$'
+  # Fail a branch carrying more than this many commits — a sign it should have
+  # been split. 0 disables the check.
+  max_commits_ahead: 20
+  # How many review-and-fix rounds a branch may take before a blocking finding
+  # that is still open goes to a person. Read by scripts/review-rounds.sh.
+  # 0 disables the cap.
+  max_review_rounds: 3
+  # Refuse to work directly on the main branch.
+  protect_main: true
+
+design:
+  # Delete this whole block for a project with no UI.
+  enabled: true
+  tokens_path: src/theme          # where spacing/colour/type tokens live
+  # Deterministic drift rules: a POSIX extended regex that must NOT appear
+  # under `paths`. This is what turns "follow the design system" from prose
+  # into a gate. Use SINGLE quotes — YAML does not process backslash escapes
+  # inside them, so the regex reaches grep intact. POSIX ERE: use
+  # [[:space:]] and [[:alpha:]], not \s and \w.
+  forbid:
+    - id: raw-hex-colour
+      pattern: '#[0-9a-fA-F]{3,8}([^0-9a-zA-Z]|$)'
+      paths: ["src/**", "app/**", "lib/**"]
+      allow: ["src/theme/**", "**/*.test.*", "**/*.spec.*"]
+      message: "Use a semantic colour token, not a raw hex value."
+    - id: magic-spacing
+      pattern: '(padding|margin|gap)[^:]*:[[:space:]]*[0-9]+(px|dp|pt)'
+      paths: ["src/**", "app/**", "lib/**"]
+      allow: ["src/theme/**"]
+      message: "Use a spacing token, not a hardcoded length."
+
+skills:
+  # Licences a vendored capability skill may carry. The default is permissive-only.
+  # This is a real hazard: the strongest public skill libraries carry CC BY-SA
+  # (copyleft, and not a software licence at all), ship no LICENSE file while a
+  # README claims MIT, or are source-available-but-not-open-source. Widen this
+  # list only with a decision you can point at, not because a gate was annoying.
+  allowed_licenses: [MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC]
+
+product:
+  # The requirement register starts advisory so a repo can adopt the harness
+  # without a big-bang backfill. Flip to true once the register is real and you
+  # want CI to hold the line on it.
+  enforce_register: false
+  # Same for the invariant register (docs/product/domain-rules.md). Advisory
+  # until the register holds real invariants.
+  # reader: scripts/gates/invariants.sh
+  enforce_invariants: false
+  # The learning loop (docs/product/questions.md, docs/quality/defects.md): a
+  # question closes only into a DEC-/INV-/REQ-, and a defect only with a lesson
+  # that matches its gap. Advisory until the registers are in use.
+  # reader: scripts/gates/learning.sh
+  enforce_learning: false
+  # An open question older than this is reported by check-learning and counted
+  # by retro-evidence: every day it stays open, another screen can raise it.
+  # reader: scripts/gates/learning.sh, scripts/retro-evidence.sh
+  question_stale_days: 14
+
+tooling:
+  # CLIs `make doctor` checks for. Each entry: name, why it is needed, and how
+  # to install it. `make setup` runs doctor and reports what is missing —
+  # it never installs anything itself, because a setup script that silently
+  # installs software on someone's machine is a setup script people stop running.
+  #
+  # required: setup reports a hard failure if absent
+  # optional: reported as a note; the feature that needs it degrades
+  required:
+    - name: git
+      why: everything
+      install: "https://git-scm.com/downloads"
+    - name: make
+      why: the command surface
+      install: "xcode-select --install (macOS) · apt install build-essential"
+    - name: python3
+      why: the design-system, skills-integrity, api-contract and evals gates, all inside `make check`
+      install: "brew install python · apt install python3"
+  optional:
+    - name: gh
+      why: the pr and release skills, and PR-based gates
+      install: "brew install gh · https://cli.github.com"
+    - name: shellcheck
+      why: linting the harness's own scripts
+      install: "brew install shellcheck"
+    - name: jq
+      why: hooks that read tool payloads
+      install: "brew install jq"
+    - name: node
+      why: make render-audit (with Playwright in the project) — measuring the rendered UI
+      install: "https://nodejs.org · then npm i -D playwright && npx playwright install chromium"
+  # Python modules a gate imports. `command -v` cannot see a module, so these
+  # cannot live in the lists above — doctor.sh checks them with a real import.
+  python_modules:
+    - name: yaml
+      why: scripts/validate-api-proposals.py — parsing OpenAPI proposals
+      install: "pip3 install pyyaml"
+
+supply_chain:
+  # A mutable version tag on a third-party CI action is remote code execution on
+  # someone else's schedule, running with your CI token. `make pin-actions`
+  # rewrites every tag to the commit SHA it currently points at.
+  #   error = fail the build | warn = report only | off
+  require_pinned_actions: warn
+  require_lockfile: error
+  # Package installation executes third-party code. Registry sources and
+  # integrity-bearing lock entries are the default; every exception is named.
+  # Run /harness-dependency-intake before adding to either exception list.
+  allowed_registry_hosts: [registry.npmjs.org]
+  allowed_non_registry_dependencies: []
+  # Names here may be root lifecycle names (preinstall/install/postinstall) or
+  # dependency package names whose lock entry declares hasInstallScript.
+  allowed_install_scripts: []
+  # Files that exist to be committed and must therefore contain only
+  # placeholders or vault references — never a real value.
+  template_globs: ['.env.sample', '*.example', '*.example.*', '.mcp.json.example']
+
+ci:
+  # Which CI files `make ci-gen` writes. The pipeline is described here once and
+  # rendered per platform, so a repo can move from GitHub to GitLab without
+  # rewriting the pipeline — only re-rendering it.
+  #   github | gitlab | bitrise   (list; github is primary and best supported)
+  platforms: [github]
+  # Runner image for the deterministic jobs.
+  runner: ubuntu-latest
+  # Stages, in order. Each maps to make targets; the adapter supplies the
+  # toolchain setup so no CI file needs to know your stack.
+  stages: [gates, build, deploy]
+
+deploy:
+  # A deploy module per environment: scripts/deploy/<target>.sh
+  #   none | vercel | cloud-run | supabase | static | custom
+  # Multiple targets run in order — e.g. supabase migrations before the app.
+  enabled: false
+  environments:
+    - name: preview
+      targets: [none]
+      trigger: pull_request      # pull_request | push | manual
+      approval: false
+    - name: staging
+      targets: [none]
+      trigger: push              # on merge to the main branch
+      approval: false
+    - name: production
+      targets: [none]
+      trigger: push
+      # A GitHub `environment:` reference is emitted, but required reviewers are
+      # configured in repo settings and CANNOT be expressed in YAML. `make
+      # ci-gen` prints the instruction; nothing in the repo can verify it.
+      approval: true
+      # Deploy and traffic cutover are separate steps where the platform allows
+      # it, with the human gate in between.
+      staged_cutover: true
+
+governance:
+  # L3 module. Ignored unless harness.level is L3+.
+  enabled: false
+  producer_cannot_self_certify: true
+  human_approval_required_for: [auth, payments, data-deletion, release-config, routing]
+
+evals:
+  # L4 module. Flip to true and run `make evals`.
+  # reader: evals/run-evals.sh, scripts/gates/ai-evals.sh (ai-product overlay)
+  enabled: false
+  # reader: evals/run-evals.sh, evals/grade.sh, scripts/gates/ai-evals.sh
+  cases_dir: evals/cases
+  # Where judge verdicts are recorded. A judge scorer with no live verdict makes
+  # the run UNGRADED (exit 2), not passing — see evals/run-evals.sh.
+  # reader: evals/run-evals.sh, evals/grade.sh
+  grades_file: evals/grades.tsv
+  # When true, `make check` fails while any judge scorer lacks a live verdict.
+  # Off by default because a repo that has just adopted the harness has the
+  # shipped example cases and no verdicts yet, and a gate that is red on day one
+  # is a gate that gets deleted on day two. Turn it on once the cases are yours.
+  # reader: scripts/gates/ai-evals.sh (ai-product overlay)
+  require_graded: false

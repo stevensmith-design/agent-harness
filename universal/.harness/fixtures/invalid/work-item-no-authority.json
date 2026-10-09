@@ -1,0 +1,8 @@
+{
+  "kind": "WorkItem",
+  "id": "PROJ-120",
+  "title": "Work nobody asked for",
+  "type": "feature",
+  "surface": "app",
+  "risk": "low"
+}

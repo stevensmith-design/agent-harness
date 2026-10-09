@@ -1,0 +1,11 @@
+{
+  "kind": "ClosureRecord",
+  "id": "C-4",
+  "workItemId": "PROJ-126",
+  "producerActorId": "agent:builder-1",
+  "closureAction": { "actorId": "human:steven", "principalKind": "human", "at": "2026-08-21T10:05:00Z" },
+  "reviewEvidenceIds": ["E-rev-4"],
+  "approvalIds": ["A-4"],
+  "deterministicEvidenceIds": ["E-det-4"],
+  "openBlockingFindings": 2
+}

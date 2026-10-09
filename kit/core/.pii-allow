@@ -1,0 +1,5 @@
+# Reviewed exceptions to scripts/gates/data-boundary.sh. One path glob per line.
+#
+# Every line here is a decision somebody made and can defend. Treat growth as a
+# signal: an allow-list that keeps growing means the rule is wrong, or the
+# discipline is. Neither is fixed by adding another line.

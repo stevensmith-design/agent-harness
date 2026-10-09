@@ -1,0 +1,10 @@
+overlay:
+  name: ai-product
+  version: 0.3.0
+  requires_base: ">=1.9.0"
+  description: For products where a model is in the critical path — trust boundaries, eval-driven development, and model choice as a recorded decision.
+
+# Gates this overlay adds. `make check` runs them via check-overlay-gates, so an
+# overlay never has to edit the base Makefile to be enforced.
+gates:
+  - ai-evals

@@ -1,0 +1,36 @@
+# Run output is the likeliest place an individual's details end up: personalising
+# output is often the point of the work. So runs/ is excluded by default.
+#
+# The exception has to re-include DIRECTORIES first — git will not descend into
+# an excluded directory, so a bare `!runs/*.public.md` never reaches a nested
+# file, and the documented escape hatch silently did nothing.
+runs/**
+!runs/**/
+!runs/README.md
+!runs/**/*.public.md
+
+# Per-working-copy state. Gitignored is what makes it per-clone: a fresh clone
+# has none, which is how the session hook knows it is your first session here.
+.harness/local/
+
+# Anything under a personal/ or private/ path, anywhere. Unconditional, and
+# checked by scripts/gates/data-boundary.sh — ignoring is a convenience, the
+# gate is the rule. Codify BEFORE the first commit: history is not removable
+# without a force-push, and by then other people have cloned it.
+**/personal/
+**/private/
+
+.env
+.env.*
+!.env.sample
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+*service-account*.json
+.npmrc
+.pypirc
+.netrc
+.DS_Store
