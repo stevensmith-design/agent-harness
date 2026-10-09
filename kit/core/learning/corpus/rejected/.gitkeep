@@ -1,0 +1,2 @@
+# Git does not track empty directories. Without this file the directory
+# vanishes on the first clone — and the retro opens by reading it.

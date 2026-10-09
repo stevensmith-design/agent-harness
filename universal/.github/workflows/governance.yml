@@ -1,0 +1,29 @@
+name: governance
+# L3 only. Runs when governance.enabled is true in harness.config.yaml.
+# Separate job because it needs Python, not your product toolchain.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  records:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Is governance enabled?
+        id: gate
+        run: |
+          en=$(grep -A5 '^governance:' harness.config.yaml | grep -m1 'enabled:' | awk '{print $2}')
+          echo "enabled=${en:-false}" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        if: steps.gate.outputs.enabled == 'true'
+        with: { python-version: '3.x' }
+      - name: Validate governance records
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          pip install jsonschema
+          python3 .harness/scripts/validate_governance.py --all

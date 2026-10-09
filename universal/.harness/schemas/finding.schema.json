@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://harness.local/schemas/finding.schema.json",
+  "title": "Finding",
+  "description": "One defect raised by a review. Blocking findings gate closure. The triple (category, location, summary) is the finding's IDENTITY — the same defect raised by two reviewers produces the same triple, which is what lets a finding be tracked rather than merely restated. `digest` binds the finding to the bytes it judged: when the file changes the finding is stale, not resolved.",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "Finding" },
+    "id": { "type": "string" },
+    "workItemId": { "type": "string" },
+    "severity": { "enum": ["blocking", "advisory"] },
+    "category": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "One lowercase word: correctness, security, scope, tests, a11y, perf. Part of the identity, so it must come from a small stable vocabulary rather than free text."
+    },
+    "location": { "type": "string", "description": "path or path:line" },
+    "summary": {
+      "type": "string",
+      "minLength": 15,
+      "description": "The claim, in one line, as concrete inputs -> wrong output. Part of the identity."
+    },
+    "failureScenario": { "type": "string", "description": "concrete inputs or state leading to the wrong result" },
+    "digest": {
+      "type": "string",
+      "description": "cksum of the file at `location` when the finding was raised. A mismatch means STALE — the code changed and nobody re-checked. Written by scripts/finding.sh."
+    },
+    "raisedAt": { "type": "string", "description": "short commit sha the finding was raised against" },
+    "status": { "enum": ["open", "stale", "resolved", "waived"] },
+    "resolvedBy": { "type": "string" },
+    "waiverReason": { "type": "string" }
+  },
+  "required": ["kind", "id", "workItemId", "severity", "category", "location", "summary", "status"],
+  "additionalProperties": false
+}

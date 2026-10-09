@@ -1,0 +1,5 @@
+# Reviewed path globs containing intentionally public contact data.
+# One path glob per line. The gate suppresses matching values, reports only paths,
+# and rejects an exception once it matches no file.
+.agents/skills/ui-design-principles/references/rules.md
+.agents/skills/ui-design-review/references/rules.md

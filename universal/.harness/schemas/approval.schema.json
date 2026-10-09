@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://harness.local/schemas/approval.schema.json",
+  "title": "Approval",
+  "description": "A named sign-off. approvalClass=human requires principalKind=human AND trust=authenticated_human — an agent may not stand in for a person, and a self-reported declaration is not a person. Read the trust definition before relying on this: the check is a labelling discipline, not authentication.",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "Approval" },
+    "id": { "type": "string" },
+    "workItemId": { "type": "string" },
+    "approvalClass": { "enum": ["human", "automated"] },
+    "approverAction": {
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string", "pattern": "^(human|agent|runner):[a-z0-9][a-z0-9._-]{0,62}$" },
+        "principalKind": { "enum": ["human", "agent", "deterministic_runner"] },
+        "at": { "type": "string" }
+      },
+      "required": ["actorId", "principalKind", "at"],
+      "additionalProperties": false
+    },
+    "trust": {
+      "enum": ["self_reported", "deterministic_runner", "independent_reviewer", "authenticated_human", "external_policy"],
+      "description": "See shared-definitions#/definitions/evidenceTrust. A declaration made with scripts/declare-intent.sh is self_reported and cannot back an approvalClass=human record."
+    },
+    "scope": { "type": "string" },
+    "evidenceIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+  },
+  "required": ["kind", "id", "workItemId", "approvalClass", "approverAction", "evidenceIds", "trust"],
+  "additionalProperties": false
+}

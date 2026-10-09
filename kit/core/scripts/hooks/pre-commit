@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# pre-commit — the repository checkpoint. Enable it once per clone:
+#   git config core.hooksPath scripts/hooks
+#   chmod +x scripts/hooks/pre-commit
+# (Git needs the executable bit on hook files, unlike everything else here.)
+# Nothing is installed for you: turning on a hook is the owner's decision.
+exec bash "$(dirname "$0")/../checkpoint.sh"

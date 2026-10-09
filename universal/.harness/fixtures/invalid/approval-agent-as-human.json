@@ -1,0 +1,16 @@
+{
+  "kind": "Approval",
+  "id": "A-2",
+  "workItemId": "PROJ-121",
+  "approvalClass": "human",
+  "approverAction": {
+    "actorId": "agent:builder-1",
+    "principalKind": "agent",
+    "at": "2026-08-21T10:02:00Z"
+  },
+  "scope": "surface:auth",
+  "evidenceIds": [
+    "E-det-2"
+  ],
+  "trust": "authenticated_human"
+}

@@ -1,0 +1,41 @@
+---
+name: api-design
+description: Conventions for HTTP endpoints and service contracts — shape, errors, versioning, idempotency. Delete for a project with no API.
+paths: ["src/**", "app/**", "api/**", "server/**", "services/**", "lib/**", "routes/**", "handlers/**"]
+trigger: glob
+---
+
+# API contracts
+
+Prevents: an API that is correct on the happy path and unusable in every other
+state, and breaking changes that reach clients unannounced.
+
+- **The contract is the deliverable.** Define it before implementing — see the
+  `api-design` skill. Change it deliberately; a shape you shipped is a promise.
+- **Status is per operation, and sign-off is recorded.** Every operation in
+  `docs/api-proposal/` carries an `x-status`; every agreement and every revision
+  of an agreed shape gets a row in `AGREEMENTS.md`. A stale agreement nobody was
+  told about is the failure mode of an incremental handover.
+- **A rule that is not a shape is not in the schema.** Invariants and their
+  enforcement side live in `docs/product/domain-rules.md` — see
+  `.agents/rules/domain-invariants.md`.
+- **Errors are part of the contract.** Every error carries a stable
+  machine-readable `code` and a human `message`. Clients switch on the code, so
+  renaming one is a breaking change; rewording a message is not.
+- **Nullability is stated on every field.** "It's probably always there" is the
+  bug. Optional and null are different; say which you mean.
+- **Pagination on any collection that can grow.** Say what an empty page looks
+  like and what happens past the end. An unbounded list endpoint is an outage
+  waiting for its first big customer.
+- **Idempotency on anything that costs money or sends a message.** Accept an
+  idempotency key and honour it; retries are not hypothetical.
+- **Validate at the boundary against a schema**, then trust the parsed type
+  inward. Do not re-validate ad hoc in the handler.
+- **Never widen a response by accident.** Serialise an explicit field list, not
+  the whole record — that is how internal columns and other tenants' data leak.
+- **Version when you break.** Additive change in place; breaking change gets a
+  new version with an announced deprecation window for the old one.
+- **Timeouts and limits on every inbound and outbound call.** Body size, page
+  size, upload size, connect and read timeouts. Something unbounded is something
+  a single caller can use to take you down.
+- Authorization belongs on every endpoint — see `.agents/rules/security.md`.

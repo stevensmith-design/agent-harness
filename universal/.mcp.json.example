@@ -1,0 +1,61 @@
+{
+  "$comment": [
+    "Copy to .mcp.json and fill in. .mcp.json is gitignored — it holds tokens.",
+    "",
+    "Only add servers this project actually needs. Every connected server costs",
+    "context on every request, and one you do not use is one more thing that can",
+    "fail, go stale, or read something it should not.",
+    "",
+    "Tokens come from the environment, never inline. ${VAR} is expanded at load",
+    "time, so the value lives in .env or your shell — not in a file someone",
+    "might paste into a chat. A token written literally here is a token you will",
+    "eventually have to rotate.",
+    "",
+    "Delete every server below that you are not using, including this comment."
+  ],
+
+  "mcpServers": {
+    "_example_github": {
+      "$why": "issues, PRs, and releases without shelling out to gh",
+      "$enable_when": "the project lives on GitHub and agents open or read PRs",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
+    },
+
+    "_example_postgres": {
+      "$why": "let an agent read the schema instead of guessing at it",
+      "$enable_when": "there is a database and agents write queries or migrations",
+      "$warning": "point this at a LOCAL or read-only replica. Never production.",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"]
+    },
+
+    "_example_sentry": {
+      "$why": "read real errors rather than reasoning about hypothetical ones",
+      "$enable_when": "you have error monitoring and agents triage bugs",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@sentry/mcp-server"],
+      "env": { "SENTRY_AUTH_TOKEN": "${SENTRY_AUTH_TOKEN}", "SENTRY_ORG": "${SENTRY_ORG}" }
+    },
+
+    "_example_figma": {
+      "$why": "read design intent at the source instead of from a screenshot",
+      "$enable_when": "designs live in Figma and agents implement from them",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp", "--stdio"],
+      "env": { "FIGMA_API_KEY": "${FIGMA_API_KEY}" }
+    },
+
+    "_example_http_server": {
+      "$why": "shape for a remote server rather than a local process",
+      "type": "http",
+      "url": "https://mcp.example.com/v1",
+      "headers": { "Authorization": "Bearer ${EXAMPLE_MCP_TOKEN}" }
+    }
+  }
+}

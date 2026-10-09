@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://harness.local/schemas/evidence-record.schema.json",
+  "title": "EvidenceRecord",
+  "description": "Proof that a gate ran and what it concluded. `trust` says what the record is WORTH; it is not the same as who it names. NOTE: an earlier version of this line claimed the field names echoed the OpenTelemetry GenAI conventions so tracing would be a mapping. No field here is gen_ai.*, nobody had worked out the mapping, and scripts/emit-evidence.sh already carries the correction. A claim about future work is still a claim.",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "EvidenceRecord" },
+    "workItemId": { "type": "string" },
+    "evidenceType": {
+      "enum": ["deterministic_validation", "governed_review", "manual_verification", "eval_run"]
+    },
+    "producerActorId": {
+      "type": "string",
+      "pattern": "^(human|agent|runner):[a-z0-9][a-z0-9._-]{0,62}$",
+      "description": "Who produced the WORK. Compared against actorAction.actorId to enforce independence."
+    },
+    "actorAction": {
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string", "pattern": "^(human|agent|runner):[a-z0-9][a-z0-9._-]{0,62}$" },
+        "principalKind": { "enum": ["human", "agent", "deterministic_runner"] },
+        "at": { "type": "string" },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "cleanContext": { "type": "boolean" },
+            "inputAccess": { "enum": ["read_only", "read_write"] },
+            "resultEmission": { "enum": ["governed_output_only", "local_state_write", "unrestricted"] }
+          },
+          "required": ["cleanContext", "inputAccess", "resultEmission"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["actorId", "principalKind", "at"],
+      "additionalProperties": false
+    },
+    "trust": {
+      "enum": ["self_reported", "deterministic_runner", "independent_reviewer", "authenticated_human", "external_policy"],
+      "description": "See shared-definitions#/definitions/evidenceTrust. A gate run by scripts/emit-evidence.sh is deterministic_runner only when a runner produced it in CI; everything else it can emit is self_reported."
+    },
+    "result": { "enum": ["pass", "fail", "not_verified", "blocked"] },
+    "detail": { "type": "string" },
+    "commit": { "type": "string" },
+    "findingIds": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["kind", "workItemId", "evidenceType", "producerActorId", "actorAction", "result", "trust"],
+  "additionalProperties": false
+}

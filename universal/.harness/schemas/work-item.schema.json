@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://harness.local/schemas/work-item.schema.json",
+  "title": "WorkItem",
+  "description": "The unit of governed work. Must exist and validate before any model tokens are spent.",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "WorkItem" },
+    "id": { "type": "string", "pattern": "^[A-Z]+-[0-9]+$|^[a-z0-9-]{3,64}$" },
+    "title": { "type": "string", "minLength": 3, "maxLength": 200 },
+    "type": { "enum": ["feature", "bug", "chore", "spike"] },
+    "surface": { "type": "string", "description": "id from surfaces[] in harness.config.yaml — drives which gates apply" },
+    "risk": { "enum": ["low", "medium", "high"] },
+    "specPath": { "type": "string" },
+    "authority": {
+      "type": "object",
+      "description": "Who asked for this. Work with no requesting authority is work nobody owns.",
+      "properties": {
+        "requestedBy": { "type": "string", "pattern": "^(human|agent|runner):[a-z0-9][a-z0-9._-]{0,62}$" },
+        "reference": { "type": "string" }
+      },
+      "required": ["requestedBy"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["kind", "id", "title", "type", "surface", "risk", "authority"],
+  "additionalProperties": false
+}

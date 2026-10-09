@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# generated symlinks (created by `make setup` from .agents/)
+.claude/skills/
+.claude/rules/
+
+# build outputs — rebuild with `make harness-package`
+dist/
+*.skill
+
+# git lock/temp debris
+_to_delete/
+
+# environment
+.env
+.env.local
+
+# dependencies
+node_modules/
+
+# private denylist read by kit/check-kit.sh — never commit it
+kit/.private-terms

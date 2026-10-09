@@ -1,0 +1,72 @@
+# Surface classification. ONE reader: scripts/resolve-surface.sh. doctor.sh asks
+# it about the whole tree; scripts/gates/surface-resolution.sh asks it about a
+# change set. Procedures that need to know how much experimentation a surface
+# takes read the answer from it too, rather than re-parsing this file — two
+# readers of one table eventually disagree, and the disagreement arrives as a
+# green tick on a file nobody classified.
+#
+# If you add a FIELD, teach the script to read it in the same change. Config
+# nothing reads is worse than none, because it looks like enforcement to
+# anyone skimming.
+#
+# TWO AXES, and conflating them is a real error:
+#   risk     = blast radius if the OUTPUT is wrong. Drives where to experiment.
+#   approval = who must sign off on the DIFF. Drives review.
+# A draft can be low risk and still need a human before it is sent.
+#
+# high   — reaches someone outside the team, or changes how every future
+#          output is judged. An unproven approach does not belong here.
+# medium — shapes work that will reach someone, with a person in between.
+# low    — costs nothing if it is wrong. This is where to experiment.
+#
+# Anything unmatched is treated as HIGH / owner. Fail closed: an unclassified
+# surface is exactly where damage goes unnoticed. That sentence sat here with
+# nothing behind it until v0.12.0 — doctor proved every PATTERN matched a file
+# and never asked whether every FILE matched a pattern, and 30 of the 51 files
+# in this template matched none, every gate script among them.
+#
+# PATTERNS MUST BE DISJOINT. A file matching two rows is an error, not a
+# priority puzzle: risk has a maximum but approval does not, so picking a
+# winner invents policy. That rules out a broad fallback with narrow overrides
+# — `learning/*` alongside `learning/corpus/*` fails — which is why the two
+# loose files under learning/ are named individually below.
+#
+# `*` CROSSES `/`, matching find -path, so foundations/* covers
+# foundations/a/b.md. Approval is a closed vocabulary: owner, reviewer, none.
+#
+# pattern	risk	approval	why	what it requires
+#
+# The rows below classify the HARNESS's own files. They are the floor, not the
+# job: add a row for every surface the WORK lands on before calling this done.
+# Four rows that all point at directories the template created will satisfy
+# doctor's coverage check while nothing real has been classified at all.
+
+foundations/*	high	owner	what the AI must not invent — everything derives from it	Logged approval. Never edited mid-task.
+learning/corpus/*	high	owner	the spec every future output is judged against	Validate with the owner. Logged approval.
+learning/reviews/*	medium	reviewer	findings that drive what the harness becomes	Finding lines must be machine-comparable — see the README there.
+contracts/*	high	owner	the definition of done	Logged approval.
+rubrics/*	high	owner	the articulated standard work is judged against	Logged approval on adoption. Prose until then.
+procedures/*	medium	reviewer	shapes output that will reach someone	A person reads the output before it is sent.
+capabilities/*	high	owner	external instructions or code a runtime may execute	Intake record, immutable pin or content hash, licence review and owner approval.
+memory/*	low	none	operational notes, consumed by us	Experiment freely.
+runs/*	low	none	dated output, reviewed before anything leaves	This is where to experiment first.
+
+read-first.md	medium	reviewer	decides what an agent reads before each kind of task	A person reads new rows. Each row names the failure that justified it.
+AGENTS.md	high	owner	loads into every session — it changes how every future output is judged	Logged approval. Budgeted; see loading-order.md.
+GOVERNANCE.md	high	owner	the authority chain — who may decide what	Logged approval. Never edited in the same change as the work it governs.
+loading-order.md	high	owner	decides what is in the context window before anyone types	Logged approval. Budget re-checked.
+harness.yaml	high	owner	the single adaptation point — every script reads it	Logged approval. Add a key only with a reader in the same change.
+capabilities-lock.json	high	owner	the provenance and reviewed bytes of external capabilities	Append or re-pin only through capability intake. Never accept unexplained hash drift.
+config/*	high	owner	the classification everything else is judged against, this file included	Logged approval. A wrong lane here is invisible everywhere else.
+scripts/*	high	owner	the enforcement itself — a loosened gate looks exactly like a passing one	Logged approval. Prove the gate can still fail: scripts/gate-selftest.sh.
+.gitignore	high	owner	decides what is tracked, and every data-boundary rule reads tracked files	Logged approval. An ignored file is a file no gate can see.
+.pii-allow	high	owner	the exception list for the data boundary — each line switches a rule off	Logged approval per line, with the review that cleared it.
+evidence/*	high	owner	the approval record — whoever edits it can grant themselves approval	Logged approval. Append-only in practice; never rewritten to fit.
+decisions/*	medium	reviewer	the record of a decision already taken elsewhere	A person reads it against the decision it claims to record.
+learning/candidates.md	medium	reviewer	the ratchet queue — what the harness might become	A person reads it before anything is promoted out of it.
+learning/changelog.md	medium	reviewer	what the harness became, and when	A person reads it. Entries are appended, not amended.
+learning/retros.md	medium	reviewer	the record that the improvement loop ran, and what it measured	Appended at every retro, including the ones that changed nothing.
+learning/findings.md	medium	reviewer	what each finding taught, and where the lesson now lives — the recurrence record	Appended, never amended. A person confirms any lesson that becomes a rule, rubric or gate.
+learning/journal/*	low	none	raw session notes, read at retro	Roles, never names. Nothing here applies until a retro promotes it.
+.claude/*	medium	reviewer	generated runtime files — the real approval is on the procedures they come from	Regenerate, never hand-edit: scripts/sync-skills.sh. The skills-sync gate checks it.
+README.md	medium	reviewer	what a human reads to understand this harness	A person reads it. Stale docs are how a harness stops being believed.

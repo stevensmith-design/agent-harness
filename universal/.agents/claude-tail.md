@@ -1,0 +1,10 @@
+<!-- HARNESS-SYNC:CLAUDE-TAIL -->
+## Claude Code specifics
+
+Everything above is the shared rulebook. Only Claude-specific mechanics belong below.
+
+- Permission tier is set in `.claude/settings.json`. Swap tiers with `make tier-explore | tier-build | tier-release`.
+- Hooks in `.claude/hooks/` enforce the non-negotiables mechanically — format/typecheck after every edit, a block on protected-path writes, and a stop-gate that refuses to end a run with no evidence written. If a hook blocks you, fix the cause; do not route around it.
+- Skills live in `.agents/skills/` and are symlinked into `.claude/skills/`. Edit the `.agents/` copy.
+- Risky or parallel work goes in a worktree (`--worktree <name>`), never in the main checkout.
+- Use the `reviewer` subagent for independent review — it must not be the same context that produced the code.

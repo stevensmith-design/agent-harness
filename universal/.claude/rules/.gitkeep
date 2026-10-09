@@ -1,0 +1,3 @@
+# Populated by `make link-skills` (part of `make setup`) with symlinks into
+# ../../.agents/skills/. Not committed as symlinks: archive extraction and some
+# filesystems mangle them, and a broken symlink here is a silently missing skill.

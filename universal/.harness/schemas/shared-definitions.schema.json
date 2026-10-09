@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://harness.local/schemas/shared-definitions.schema.json",
+  "title": "Shared definitions",
+  "description": "Common types for governance records. Draft-07 so a stock python jsonschema validates it with no extra toolchain.",
+  "definitions": {
+    "actorId": {
+      "type": "string",
+      "pattern": "^(human|agent|runner):[a-z0-9][a-z0-9._-]{0,62}$",
+      "description": "Namespaced actor identity. The prefix is what makes producer!=reviewer checkable."
+    },
+    "principalKind": { "enum": ["human", "agent", "deterministic_runner"] },
+    "evidenceTrust": {
+      "enum": ["self_reported", "deterministic_runner", "independent_reviewer", "authenticated_human", "external_policy"],
+      "description": "HOW MUCH this record's claim is worth, which is a different question from who it names. self_reported: whoever wrote the record asserted it, and nothing checked — any actor that can run repository scripts can produce one, so this is the honest label for a declared intent. deterministic_runner: a program with a fixed output produced it and the run can be repeated. independent_reviewer: a different actor than the producer, in a clean read-only context. authenticated_human: a channel that ISSUES IDENTITY vouched for a person — a GitHub required review, a protected environment. external_policy: an authority outside this repository. WHAT THIS IS NOT: these records are files, and a file is not authenticated by a field inside it. An actor that can write the record can write any value here. The vocabulary makes the claim explicit and checkable for CONSISTENCY; it does not verify it. Anything that must genuinely be authenticated has to arrive from a channel that issues identity, and this harness reads no such channel today.",
+      "$comment": "Ordered weakest to strongest. Do not reorder — validate_governance.py compares by membership, not index, but the guide quotes this order."
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "workItemId": { "type": "string", "pattern": "^[A-Z]+-[0-9]+$|^[a-z0-9-]{3,64}$" },
+    "provenance": {
+      "type": "object",
+      "description": "How the actor was operating when it produced this record.",
+      "properties": {
+        "cleanContext": { "type": "boolean", "description": "true = no memory of producing the work under review" },
+        "inputAccess": { "enum": ["read_only", "read_write"] },
+        "resultEmission": { "enum": ["governed_output_only", "local_state_write", "unrestricted"] }
+      },
+      "required": ["cleanContext", "inputAccess", "resultEmission"],
+      "additionalProperties": false
+    },
+    "actorAction": {
+      "type": "object",
+      "properties": {
+        "actorId": { "$ref": "#/definitions/actorId" },
+        "principalKind": { "$ref": "#/definitions/principalKind" },
+        "at": { "$ref": "#/definitions/timestamp" },
+        "provenance": { "$ref": "#/definitions/provenance" }
+      },
+      "required": ["actorId", "principalKind", "at"],
+      "additionalProperties": false
+    }
+  }
+}

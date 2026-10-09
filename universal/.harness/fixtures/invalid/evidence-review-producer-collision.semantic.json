@@ -1,0 +1,19 @@
+{
+  "kind": "EvidenceRecord",
+  "workItemId": "PROJ-124",
+  "evidenceType": "governed_review",
+  "producerActorId": "agent:builder-1",
+  "actorAction": {
+    "actorId": "agent:builder-1",
+    "principalKind": "agent",
+    "at": "2026-08-21T09:31:00Z",
+    "provenance": {
+      "cleanContext": true,
+      "inputAccess": "read_only",
+      "resultEmission": "governed_output_only"
+    }
+  },
+  "result": "pass",
+  "detail": "Schema-perfect. The reviewer is the producer, which is exactly what schema cannot see.",
+  "trust": "independent_reviewer"
+}

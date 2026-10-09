@@ -1,0 +1,14 @@
+# Generated views of the canonical instruction files. Collapsed in diffs so a
+# regeneration does not bury the actual change under a wall of derived text.
+# History and search are unaffected — this only changes the default diff view.
+CLAUDE.md                          linguist-generated=true
+.cursor/rules/*.mdc                linguist-generated=true
+.github/copilot-instructions.md    linguist-generated=true
+.github/instructions/*.md          linguist-generated=true
+.github/workflows/gates.yml        linguist-generated=true
+.github/workflows/deploy.yml       linguist-generated=true
+.gitlab-ci.yml                     linguist-generated=true
+
+# Keep line endings sane so exact-match checks on file contents do not break
+# when someone edits through a web UI.
+* text=auto eol=lf

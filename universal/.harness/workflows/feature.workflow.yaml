@@ -1,0 +1,122 @@
+name: feature
+description: |
+  Governed feature delivery, stack-agnostic.
+  intake -> plan -> implement -> deterministic validation -> independent review
+  -> (policy-selected human approval) -> closure.
+
+  The workflow owns the order, the gates, and who may certify what. The model
+  does not. Every command routes through `make`, so this file is identical for a
+  React, React Native, or Flutter repo — only the adapter differs.
+
+  Node format follows the Archon workflow runner so an Archon install runs it
+  directly. With no runner, ../lifecycle/feature.lifecycle.md is the SOP.
+
+interactive: true   # the approval node needs a foreground session
+
+nodes:
+  # 1. INTAKE — deterministic. Fail before spending any model tokens on a
+  #    malformed request. No worktree, no AI, no cost.
+  - id: intake
+    bash: |
+      set -euo pipefail
+      test -f "$ARTIFACTS_DIR/work-item.json" || { echo "missing work-item.json" >&2; exit 1; }
+      python3 .harness/scripts/validate_governance.py --file "$ARTIFACTS_DIR/work-item.json" --kind WorkItem
+      ./scripts/gates/spec-clarity.sh
+
+  # 2. PLAN — AI, producer role. Artifacts only; no source mutation.
+  #    Capability shrinks per step: planning can read and write artifacts, but
+  #    has no shell. "The agent has tools" is the wrong unit — THIS STEP has
+  #    exactly these tools, and a step that only reasons should have none.
+  - id: plan
+    allowed_tools: [Read, Glob, Grep, Write]
+    prompt: |
+      Read $ARTIFACTS_DIR/work-item.json. Follow the `spec` skill in
+      .agents/skills/harness-spec/SKILL.md: write spec.md, plan.md and tasks.md into
+      $ARTIFACTS_DIR. Mark every assumption as [NEEDS CLARIFICATION: ...] rather
+      than choosing. Do not edit source.
+    provider: claude
+    model: large
+    depends_on: [intake]
+
+  # 3. IMPLEMENT — AI, producer role. Isolated worktree; smallest diff.
+  - id: implement
+    denied_tools: [WebFetch, WebSearch]   # implement from the plan, not from the internet
+    prompt: |
+      Implement $ARTIFACTS_DIR/tasks.md. Obey AGENTS.md and every rule in
+      .agents/rules/ whose paths match the files you touch. Smallest diff that
+      satisfies the spec. Add tests for new behaviour and for error paths.
+    provider: claude
+    model: large
+    isolation: worktree
+    depends_on: [plan]
+
+  # 4. DETERMINISTIC VALIDATION — cheap and objective, before any judgment.
+  - id: deterministic-validation
+    bash: |
+      set -euo pipefail
+      # make check records its own result — pass, or not_verified over stub
+      # verbs. Writing "pass" here as well is how a stubbed run became a pass.
+      HARNESS_ACTOR=runner:workflow make check
+    depends_on: [implement]
+
+  # 4b. EXPLORATION BRIEF — the gates verify what is written; this names what
+  #     nobody has written yet, so the person exploring has a direction rather
+  #     than "please test". Not a testing framework: one short file, reused as
+  #     the PR's Not verified section.
+  - id: exploration-brief
+    allowed_tools: [Read, Glob, Grep, Write, Bash]
+    prompt: |
+      Read the diff on this branch and docs/quality/README.md (the human lane).
+      Write $ARTIFACTS_DIR/exploration-brief.md: what changed in one line; which
+      states in docs/product/domain-rules.md it touches; and the lines of the
+      human lane that apply here — states no fixture renders, sequences and
+      combinations, input methods, environments CI does not run, how it feels.
+      Name the screens and the order to try them in. If nothing user-visible
+      changed, write "Nothing user-visible: <why>" and stop. This file is the
+      PR's Not verified section; do not write a disclaimer.
+    provider: claude
+    depends_on: [deterministic-validation]
+
+  # 5. INDEPENDENT REVIEW — fresh context, different actor, read-only.
+  #    Producer memory is the thing being excluded; that is the whole point.
+  - id: independent-review
+    command: review
+    context: fresh
+    # Read-only by capability, not by instruction. A reviewer that CAN write is
+    # one bad turn away from fixing what it found, which ends independence.
+    allowed_tools: [Read, Glob, Grep]
+    hooks:
+      PreToolUse:
+        - matcher: "Write|Edit|Bash"
+          response:
+            hookSpecificOutput:
+              hookEventName: PreToolUse
+              permissionDecision: deny
+              permissionDecisionReason: "Review lane is read-only. Report the finding; do not fix it."
+    provider: claude
+    model: large
+    depends_on: [exploration-brief]
+
+  # 6. HUMAN APPROVAL — pauses for a person. Only a human principal may approve,
+  #    and the Approval must carry trust=authenticated_human. A declaration made
+  #    with scripts/declare-intent.sh is trust=self_reported and is rejected: it
+  #    proves a declaration was made, not that a person made it. NOTE that no
+  #    channel in this harness issues authenticated_human today — see the trust
+  #    table in HARNESS-GUIDE.md. This node describes an orchestrator that does
+  #    not exist yet, which the manifest already says.
+  #    the schema refuses an agent in this slot. Skipped by policy for low-risk
+  #    surfaces (see governance.human_approval_required_for).
+  - id: human-approval
+    approval: true
+    capture_response: true
+    depends_on: [independent-review]
+
+  # 7. CLOSURE — binds review + approval + evidence, then validates. The
+  #    validator refuses closure when the closing actor equals the producer.
+  - id: closure
+    bash: |
+      set -euo pipefail
+      # Closure is a readiness point: NOT VERIFIED evidence fails here.
+      HARNESS_STRICT=1 ./scripts/gates/evidence.sh
+      python3 .harness/scripts/validate_governance.py --file "$ARTIFACTS_DIR/closure.json" --kind ClosureRecord
+    depends_on: [human-approval]

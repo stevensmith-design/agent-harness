@@ -1,0 +1,12 @@
+# Pages `make render-audit` draws, at phone and desktop width, one per line.
+# A line starting with / is appended to $RENDER_BASE_URL (default
+# http://localhost:3000); a full URL or a local .html file is used as it is.
+#
+# List the main screens with the STRESS FIXTURE loaded (docs/quality/README.md):
+# the longest real names, three-digit counts, zero items, the deepest hierarchy,
+# archived and deleted parents. The audit measures; the fixture is what gives it
+# something to find. Empty screens with short names pass everything.
+#
+# /projects
+# /projects/stress-longest-names
+# /customers?state=archived

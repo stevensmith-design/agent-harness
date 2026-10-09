@@ -1,0 +1,55 @@
+# Secrets and local config
+.env
+.env.*
+!.env.sample
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+*service-account*.json
+.npmrc
+.pypirc
+.netrc
+**/personal/
+**/private/
+*.local.md
+.claude/settings.local.json
+.mcp.json
+
+# Harness run evidence (flip if you want the trail committed)
+.agents/runs/*.jsonl
+
+# Agent worktrees
+.claude/worktrees/
+
+# Skill and rule symlinks into .agents/ — created by `make setup`, never
+# committed: archive extraction and some filesystems turn a symlink into a text
+# file containing its target, and a broken symlink there is a silently missing
+# skill. `make link-skills` rebuilds them. Without these four lines every
+# `make setup` left 36 untracked symlinks waiting to be committed by accident.
+.claude/skills/*
+!.claude/skills/.gitkeep
+.claude/rules/*
+!.claude/rules/.gitkeep
+
+# Generated tool views are committed on purpose — CI checks they match.
+# (CLAUDE.md, .cursor/rules/, .github/copilot-instructions.md)
+
+# Build artifacts — rebuild with `make harness-package`
+harness-init.skill
+
+# Build output
+dist/
+build/
+coverage/
+node_modules/
+.dart_tool/
+.agents/runs/.stubs
+.agents/runs/.stop-*
+
+# A declared intent authorises a change on ONE branch. Committing it would
+# authorise somebody else's.
+.harness-intent
+.dependency-intent

@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "name": "[Project Name] Design Tokens",
+    "version": "1.0.0",
+    "notes": "Source of truth for all design values. Schema mirrors design-system-template.md one-to-one \u2014 the same semantic roles, radius scale, font roles, elevation ramp, and motion tokens. Keep the two files aligned; when a value changes, change it in both."
+  },
+  "color": {
+    "semantic": {
+      "primary": "",
+      "primaryHover": "",
+      "secondary": "",
+      "destructive": "",
+      "success": "",
+      "warning": "",
+      "error": "",
+      "info": ""
+    },
+    "surface": {
+      "_note": "Role names matter: the validator resolves canvas/card by key name. Do not rename these to bg/surface \u2014 `surface.bg` matches both the canvas and the card heuristic and the value-step check collapses to 1.000:1.",
+      "canvas": "",
+      "card": "",
+      "cardAlt": "",
+      "border": ""
+    },
+    "text": {
+      "primary": "",
+      "muted": "",
+      "inverse": ""
+    },
+    "neutralRamp": {
+      "_note": "One brand-tinted neutral ramp (brand hue at 2\u20135% saturation) drives bg, border, muted text, and ink. Canvas \u2248 L 96\u201398%; cards pure #FFFFFF; background\u2194card value step 1.05\u20131.12:1.",
+      "0": "#FFFFFF",
+      "1": "",
+      "2": "",
+      "5": "",
+      "9": ""
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "display": "",
+      "body": "",
+      "mono": ""
+    },
+    "fontSize": {
+      "xs": "12px",
+      "sm": "14px",
+      "base": "16px",
+      "lg": "18px",
+      "xl": "20px",
+      "2xl": "24px",
+      "3xl": "30px",
+      "4xl": "36px",
+      "5xl": "48px"
+    },
+    "fontWeight": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "lineHeight": {
+      "tight": 1.25,
+      "snug": 1.375,
+      "normal": 1.5,
+      "relaxed": 1.625
+    },
+    "tracking": {
+      "tighter": "-0.04em",
+      "tight": "-0.02em",
+      "normal": "0em",
+      "wide": "0.05em"
+    }
+  },
+  "spacing": {
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "24px",
+    "6": "32px",
+    "7": "48px",
+    "8": "64px",
+    "9": "96px"
+  },
+  "radius": {
+    "sm": "",
+    "md": "",
+    "lg": "",
+    "pill": "999px"
+  },
+  "elevation": {
+    "_note": "Neutral, role-based. Generative ramp: blur/offset rise while opacity falls. Static/data cards use elev-0 (none) + hairline + value step.",
+    "elev-0": "none",
+    "elev-1": "0 1px 2px rgba(17,24,22,0.06)",
+    "elev-2": "0 4px 12px rgba(17,24,22,0.08)",
+    "elev-3": "0 12px 32px rgba(17,24,22,0.12)"
+  },
+  "motion": {
+    "duration": {
+      "fast": "150ms",
+      "normal": "250ms",
+      "slow": "350ms"
+    },
+    "easing": {
+      "standard": "cubic-bezier(0.25, 1, 0.5, 1)",
+      "exit": "cubic-bezier(0.4, 0, 1, 1)"
+    }
+  }
+}

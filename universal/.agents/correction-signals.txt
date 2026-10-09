@@ -1,0 +1,20 @@
+# Phrases that usually mean a person is correcting the agent.
+# Read by scripts/mine-sessions.py. Changed through /harness-retro, like the rest of .agents/. One case-insensitive regular expression
+# per line; lines starting with # are ignored.
+#
+# Tune this to how your team actually talks, including other languages. A
+# signal that only ever matches noise should be deleted; a correction the retro
+# found by hand that matched nothing here is a missing line.
+\bagain\b
+\bi (already|just) (said|told|asked)\b
+\bas i said\b
+\bwhy (did|do) you( keep)?\b
+\b(you|it) (forgot|missed|ignored|skipped)\b
+\bnot what i (asked|meant|wanted)\b
+\bthat'?s (wrong|not right|not it)\b
+\bevery time\b
+\bkeep (doing|making|forgetting)\b
+\b(don'?t|do not|stop|never) (do|use|add|change|touch|write)\b
+\b(undo|revert) (that|this|it)\b
+\bi said\b
+^no[,.! ]

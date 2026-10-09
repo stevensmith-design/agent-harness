@@ -1,0 +1,17 @@
+{
+  "kind": "Approval",
+  "id": "A-1",
+  "workItemId": "PROJ-118",
+  "approvalClass": "human",
+  "approverAction": {
+    "actorId": "human:steven",
+    "principalKind": "human",
+    "at": "2026-08-21T10:02:00Z"
+  },
+  "scope": "surface:app",
+  "evidenceIds": [
+    "E-det-1",
+    "E-rev-1"
+  ],
+  "trust": "authenticated_human"
+}

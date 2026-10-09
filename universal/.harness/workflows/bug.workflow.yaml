@@ -1,0 +1,92 @@
+name: bug
+description: |
+  Fast lane for a low-risk defect fix. Same spine as `feature`, minus the
+  planning artifact and minus the human approval node — plus the two steps a
+  bug needs and a feature does not: a sweep, because the rule that broke here
+  covers other paths too, and a lesson, because a fix that teaches nothing
+  prevents one instance. The procedure is .agents/skills/harness-defect/SKILL.md.
+
+  This file exists to make a point: the rung is chosen per surface, not per
+  harness. Requiring a human approval on a typo fix trains people to approve
+  without reading, which is worse than having no approval at all.
+
+  A bug touching a surface listed in governance.human_approval_required_for
+  must use the `feature` workflow instead.
+
+nodes:
+  - id: reproduce
+    allowed_tools: [Read, Glob, Grep, Write, Bash]
+    prompt: |
+      Reproduce the defect described in $ARTIFACTS_DIR/work-item.json and write
+      a failing test that captures it. Do not fix anything yet — a fix without a
+      failing test first is a guess.
+    provider: claude
+    depends_on: []
+
+  # A spec gap stops the lane here: a bug with no rule behind it is a question,
+  # and an agent that picks an answer and fixes towards it has invented a rule.
+  - id: sweep
+    allowed_tools: [Read, Glob, Grep, Write, Bash]
+    prompt: |
+      Follow steps 2–4 of .agents/skills/harness-defect/SKILL.md. Name the rule
+      this defect broke and its gap. Start $ARTIFACTS_DIR/sweep.md with the two
+      header lines `gap: <spec|test|render|judgement>` and
+      `status: <clear|BLOCKED_ON_DECISION Q-NNN>`. If the gap is `spec`, add a
+      Q- row to docs/product/questions.md, write that status and stop.
+      Otherwise check docs/quality/defects.md for earlier breaks of the same
+      rule, then list every path the rule covers in the sweep and add a failing
+      test for each path that breaks it. Do not fix anything yet.
+    provider: claude
+    depends_on: [reproduce]
+
+  # The prose above asks the agent to stop; this is what actually stops the
+  # lane. Exit 2 = BLOCKED_ON_DECISION: decide the Q-, then re-run from `sweep`.
+  - id: sweep-guard
+    bash: |
+      ./scripts/sweep-guard.sh "$ARTIFACTS_DIR/sweep.md"
+    depends_on: [sweep]
+
+  - id: fix
+    prompt: |
+      Make the failing tests pass with the smallest possible change — every one
+      the sweep added, not only the first. Do not refactor surrounding code.
+      Obey AGENTS.md and the matching .agents/rules/.
+    provider: claude
+    isolation: worktree
+    depends_on: [sweep-guard]
+
+  - id: deterministic-validation
+    bash: |
+      set -euo pipefail
+      # make check records its own result — pass, or not_verified over stub
+      # verbs. Writing "pass" here as well is how a stubbed run became a pass.
+      HARNESS_ACTOR=runner:workflow make check
+    depends_on: [fix]
+
+  - id: independent-review
+    command: review
+    context: fresh
+    allowed_tools: [Read, Glob, Grep]
+    provider: claude
+    depends_on: [deterministic-validation]
+
+  # The lesson is written after review, so it records what survived review —
+  # and check-learning reads it, so a lesson that names nothing real is reported
+  # (and fails, once product.enforce_learning is on).
+  - id: learn
+    allowed_tools: [Read, Glob, Grep, Write, Edit, Bash]
+    prompt: |
+      Follow step 6 of .agents/skills/harness-defect/SKILL.md. Append one row per
+      defect (this one and every one the sweep found) to docs/quality/defects.md,
+      with the lesson written to the most specific, most mechanical owner. If the
+      rule had broken before, the lesson must be a rung stronger than the last.
+      Then run ./scripts/gates/learning.sh.
+    provider: claude
+    depends_on: [independent-review]
+
+  # READINESS — the lane may carry not_verified through validation, review and
+  # learning so that work is not lost; it may not end looking complete.
+  - id: readiness
+    bash: |
+      HARNESS_STRICT=1 ./scripts/gates/evidence.sh
+    depends_on: [learn]
