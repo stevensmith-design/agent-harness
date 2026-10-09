@@ -40,74 +40,131 @@ kit's dev pack uses the universal harness as its reference implementation.
 
 ## Get them
 
-**Requirements:** `bash`, `git` and `make`. Works on macOS and Linux (on Windows,
-use WSL). The copy-one-folder option below also needs Node.js for `npx`.
+**You need:** `bash`, `git` and `make` (macOS or Linux; on Windows, use WSL).
+The one-command download below also needs [Node.js](https://nodejs.org).
 
-### Both — clone the repository
+Every grey box below is one step — use its copy button, paste it into your
+terminal, and run it.
+
+### Option 1 — get both
 
 ```bash
 git clone https://github.com/stevensmith-design/agent-harness.git
-cd agent-harness
 ```
 
-Or fork it first if you want your own GitHub copy to customise:
+This makes an `agent-harness` folder containing `universal/` and `kit/`.
+
+Want your own GitHub copy to customise? Fork it instead:
 
 ```bash
 gh repo fork stevensmith-design/agent-harness --clone
 ```
 
-### Just one — copy a single folder
-
-Each folder is self-contained and installs from a plain copy; it does not need
-this repository's git history.
+### Option 2 — get just the universal harness
 
 ```bash
-npx degit stevensmith-design/agent-harness/universal universal-harness   # the universal harness
-npx degit stevensmith-design/agent-harness/kit harness-kit                # the starter kit
+npx degit stevensmith-design/agent-harness/universal universal-harness
 ```
 
-No Node? A sparse clone gets one folder with git alone:
+This makes a `universal-harness` folder. No Node.js? Use git instead:
 
 ```bash
-git clone --filter=blob:none --sparse https://github.com/stevensmith-design/agent-harness.git
-cd agent-harness
-git sparse-checkout set universal   # or: kit
+git clone --filter=blob:none --sparse https://github.com/stevensmith-design/agent-harness.git universal-harness-repo && git -C universal-harness-repo sparse-checkout set universal
 ```
 
-In the install steps below, `universal/` and `kit/` mean wherever that folder
-ended up — for example `universal-harness/` if you used `degit`.
+That puts it in `universal-harness-repo/universal`.
 
-## Install the universal harness into a project
+### Option 3 — get just the harness kit
 
 ```bash
-cd universal
-./scripts/install.sh <your-repo>     # refuses to overwrite your files; carries no .git
-cd <your-repo>
-git switch -c chore/install-harness  # gates refuse to run on the default branch
-make setup                           # env, hooks and skill symlinks; installs no packages
-make harness-init                    # fill in harness.config.yaml
-make deps                            # only after /harness-dependency-intake approval
-make check                           # must go green before you trust anything
+npx degit stevensmith-design/agent-harness/kit harness-kit
 ```
 
-Use the installer, not `cp -R`. A plain copy either nests the tree or drops
-every dotfile, and it overwrites your `Makefile`, `README.md` and `CLAUDE.md`
-without asking. `universal/HARNESS-MANIFEST.md` has the full checklist.
-
-## Build a harness with the starter kit
+This makes a `harness-kit` folder. No Node.js? Use git instead:
 
 ```bash
-cd kit
-./detect.sh <target>...  # read-only: works out what kind of job this is
-./install.sh <target>    # copies the core template; never overwrites, asks first
+git clone --filter=blob:none --sparse https://github.com/stevensmith-design/agent-harness.git harness-kit-repo && git -C harness-kit-repo sparse-checkout set kit
 ```
 
-`detect.sh` resolves to one of four motions — `harness`, `overlay`, `scattered`,
-`greenfield` — and fails closed, so ambiguous evidence routes to the motion that
-writes least. Then open the target in your agent and say **"help me create a
-harness for …"**. The entry skill is `harness-scope` (design one), followed by
-`harness-build` (build it), or `harness-audit` (review one that already exists).
-See [`kit/README.md`](kit/README.md) and [`kit/INSTALL.md`](kit/INSTALL.md).
+That puts it in `harness-kit-repo/kit`.
+
+## Install the universal harness into your project
+
+**1. Tell your terminal where your project is.** Replace the path with your
+own project folder, then run it:
+
+```bash
+PROJECT=~/path/to/your-project
+```
+
+**2. From inside the universal harness folder** (`universal-harness`, or
+`agent-harness/universal` if you cloned both), copy the harness in:
+
+```bash
+./scripts/install.sh "$PROJECT"
+```
+
+It refuses to overwrite your files and tells you what clashed, so nothing is
+lost. Use this script, not `cp -R` — a plain copy drops the hidden folders that
+make up most of the harness.
+
+**3. Set it up in your project** — run in the same terminal:
+
+```bash
+cd "$PROJECT"
+git switch -c chore/install-harness
+make setup
+make harness-init
+```
+
+`make setup` prepares hooks and skill links but installs no packages.
+`make harness-init` walks you through `harness.config.yaml`. The harness's
+checks refuse to run on your main branch, which is why it starts a new one.
+
+**4. Check it works:**
+
+```bash
+make check
+```
+
+This must pass before you trust anything else. When your project needs
+packages installed, run `make deps` — but only after the
+`/harness-dependency-intake` skill has approved them. The full checklist is in
+[`universal/HARNESS-MANIFEST.md`](universal/HARNESS-MANIFEST.md).
+
+## Build a harness with the kit
+
+**1. Tell your terminal where the harness should go** — your team's folder,
+workspace or repository. Replace the path, then run it:
+
+```bash
+TARGET=~/path/to/your-work
+```
+
+**2. From inside the kit folder** (`harness-kit`, or `agent-harness/kit` if you
+cloned both), see what kind of job this is. This only reads; it changes
+nothing:
+
+```bash
+./detect.sh "$TARGET"
+```
+
+**3. Copy in the starting template.** It shows you the list of files and asks
+before writing anything, and never overwrites:
+
+```bash
+./install.sh "$TARGET"
+```
+
+**4. Open that folder in your AI agent** (Claude Code, Cursor and similar) and
+say:
+
+> help me create a harness for …
+
+From there the kit's `harness-scope` skill designs it with you and
+`harness-build` builds it. Already have a harness? Say *"review my existing harness"* and
+`harness-audit` reviews it. More in [`kit/README.md`](kit/README.md) and
+[`kit/INSTALL.md`](kit/INSTALL.md).
 
 ## Also here
 
