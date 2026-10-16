@@ -32,16 +32,18 @@ If the harness enables Claude Code's shell sandbox and the repository uses an
 SSH remote, direct `git fetch`, `git pull`, and `git push` need narrow
 `sandbox.excludedCommands` entries and matching permission allows. The macOS
 sandbox cannot complete Git-over-SSH authentication even when the host is on
-the network allowlist. Keep the exception to those three command families:
-excluded commands have the user's full filesystem, credential, and network
-access.
+the network allowlist. If `gh` cannot read its normal macOS credentials or TLS
+store inside the sandbox, add an exact `gh *` exclusion too, while permitting
+only the required `gh` subcommands. Excluded commands have the user's full
+filesystem, credential, and network access; permission allow/deny rules still
+apply.
 
 Command shape matters. Run each network Git operation as a separate direct
 command. A `cd` chain, `git -C`, command substitution, loop, script, or `make`
 target does not match a direct Git exclusion; if a project deliberately wraps
 shipping in one trusted target, that exact target needs its own policy. HTTPS
-Git and `gh` need both `github.com` and `*.github.com`; the wildcard does not
-cover the apex domain.
+Git and sandboxed `gh` need both `github.com` and `*.github.com`; the wildcard
+does not cover the apex domain.
 
 Writes under `.claude/` and `.git/` are host-protected. Claude Code may still
 ask for a yes/no approval or route them through its auto-mode classifier even

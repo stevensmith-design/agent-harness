@@ -36,8 +36,8 @@ or not anyone thought to ask for it.
 - **Ownership-based permissions** (`.claude/settings.json`) — the agent cannot read
   `.env`, cannot edit its own rules, and is sandboxed to an allowlisted network
   where the runtime supports it. On macOS, only direct `git fetch`, `git pull`,
-  and `git push` commands run outside the sandbox so SSH remotes can use the
-  operator's credentials. They still pass through Claude Code's allow/deny rules;
+  `git push`, and allowed `gh` commands run outside the sandbox so SSH remotes
+  and GitHub authentication can use the operator's credentials. They still pass through Claude Code's allow/deny rules;
   chained commands do not receive this exception. These Git commands therefore
   have the operator's full host and credential access, so repository ownership
   rules and branch protection remain the trust boundary.

@@ -25,7 +25,7 @@ branch. The checks read the project-specific policy from `harness.config.yaml`.
   mergeability. Merge only when the requested workflow and repository protections
   allow it. Update a behind branch and wait for checks instead of asking the user
   to run routine commands.
-- Run network Git commands (`fetch`, `pull`, `push`) as separate, direct commands.
+- Run network Git commands (`fetch`, `pull`, `push`) and `gh` as separate, direct commands.
   Do not hide them in `cd` chains, loops, command substitutions, or `git -C`;
   Claude Code uses their exact command shape to apply the macOS sandbox exception.
 - Delete a merged branch and remove a clean worktree when you created and own
