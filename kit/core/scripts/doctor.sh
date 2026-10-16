@@ -245,6 +245,18 @@ done
 IFS=$_ifs
 [ "$n_conf" -eq 0 ] && [ "$n_short" -eq 0 ] && pass "no sync conflict copies or unreadable cloud shortcuts" "whole tree"
 
+# macOS ignores TMPDIR for a bare mktemp call and may choose a path outside an
+# agent sandbox. Every call must name a template beneath the writable temp root.
+baremktemp=$(grep -rnE 'mktemp([[:space:]]+-d)?[[:space:]]*(\)|;|$|\|\|)' \
+               scripts/*.sh scripts/gates/*.sh scripts/hooks/*.sh 2>/dev/null \
+             | grep -v 'doctor.sh' \
+             | grep -vE ':[0-9]+:[[:space:]]*#' || true)
+if [ -n "$baremktemp" ]; then
+  fail "bare mktemp ignores \$TMPDIR on macOS and can fail in a sandbox: $baremktemp"
+else
+  pass "mktemp calls use a writable \$TMPDIR template" "scripts and hooks"
+fi
+
 # ── 6. Stubs ─────────────────────────────────────────────────────────────────
 if [ -s runs/.state/stubs ]; then
   fail "$(wc -l < runs/.state/stubs | tr -d ' ') stubbed check(s) recorded — a stub is not a pass"

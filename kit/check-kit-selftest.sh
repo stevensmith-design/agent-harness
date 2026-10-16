@@ -13,7 +13,7 @@
 
 . "$(dirname "$0")/core/scripts/lib.sh"
 KIT="$(cd "$(dirname "$0")" && pwd)"
-TMP=$(mktemp -d) || exit 1
+TMP=$(mktemp -d "${TMPDIR:-/tmp}/harness-kit-selftest.XXXXXX") || exit 1
 trap 'rm -rf "$TMP"' EXIT
 cp -R "$KIT/." "$TMP/" 2>/dev/null
 rm -rf "$TMP/.git"

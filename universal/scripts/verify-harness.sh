@@ -135,6 +135,21 @@ portability_checks() {
     note ok "no GNU-only coreutils in scripts"
   fi
 
+  # On macOS a bare mktemp ignores TMPDIR and chooses a system temp root that
+  # an agent sandbox may not be allowed to write. An explicit template keeps
+  # temporary files inside the host-provided writable temp directory.
+  baremktemp=$(grep -rnE 'mktemp([[:space:]]+-d)?[[:space:]]*(\)|;|$|\|\|)' \
+                 "$HARNESS_ROOT"/scripts/*.sh "$HARNESS_ROOT"/scripts/gates/*.sh "$HARNESS_ROOT"/scripts/adapters/*.sh \
+                 "$HARNESS_ROOT"/.githooks/* "$HARNESS_ROOT"/.claude/hooks/*.sh 2>/dev/null \
+               | grep -v 'verify-harness.sh' \
+               | grep -vE ':[0-9]+:[[:space:]]*#' || true)
+  if [ -n "$baremktemp" ]; then
+    note fail "bare mktemp ignores \$TMPDIR on macOS and can fail in a sandbox:"
+    printf '%s\n' "$baremktemp" | sed 's/^/      /' >&2
+  else
+    note ok "mktemp calls use a writable \$TMPDIR template"
+  fi
+
   # `sed -i EXPR FILE` is GNU-only. BSD/macOS sed takes a MANDATORY backup
   # suffix immediately after -i, so it reads EXPR as the suffix and then treats
   # FILE as the expression: the command fails, or rewrites the wrong thing.

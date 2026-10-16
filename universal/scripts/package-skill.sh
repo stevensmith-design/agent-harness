@@ -27,7 +27,7 @@ command -v zip >/dev/null 2>&1 || fail "zip is required"
 "$HARNESS_ROOT/scripts/gates/rule-coverage.sh" >/dev/null 2>&1 \
   || warn "rule-coverage is not clean — packaging anyway (a template legitimately has unmatched globs)"
 
-tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/harness.XXXXXX"); trap 'rm -rf "$tmp"' EXIT
 pkg="$tmp/harness-init"
 mkdir -p "$pkg/assets" "$pkg/references"
 

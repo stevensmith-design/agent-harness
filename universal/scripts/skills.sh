@@ -107,7 +107,7 @@ cmd_add() {
   while [ $# -gt 0 ]; do case "$1" in --ref) ref="$2"; shift 2;; *) shift;; esac; done
 
   local url="https://github.com/$repo.git"
-  local tmp; tmp=$(mktemp -d); trap 'rm -rf "$tmp"' RETURN
+  local tmp; tmp=$(mktemp -d "${TMPDIR:-/tmp}/harness.XXXXXX"); trap 'rm -rf "$tmp"' RETURN
 
   info "fetching $repo${ref:+ @ $ref}"
   if [ -n "$ref" ] && printf '%s' "$ref" | grep -qE '^[0-9a-f]{40}$'; then

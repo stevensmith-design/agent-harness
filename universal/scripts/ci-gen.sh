@@ -12,7 +12,7 @@ load_adapter
 
 CHECK=0; [ "${1:-}" = "--check" ] && CHECK=1
 OUT="$HARNESS_ROOT"
-if [ "$CHECK" = 1 ]; then OUT=$(mktemp -d); trap 'rm -rf "$OUT"' EXIT; mkdir -p "$OUT/.github/workflows"; fi
+if [ "$CHECK" = 1 ]; then OUT=$(mktemp -d "${TMPDIR:-/tmp}/harness.XXXXXX"); trap 'rm -rf "$OUT"' EXIT; mkdir -p "$OUT/.github/workflows"; fi
 
 PLATFORMS=$(cfg ci.platforms '[github]' | tr -d '[]"' | tr ',' ' ')
 RUNNER=$(cfg ci.runner ubuntu-latest)

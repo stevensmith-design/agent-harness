@@ -44,7 +44,7 @@ found=0
 # Keeping the family in the grant means allowing a fake password cannot also
 # hide an AWS-shaped key that happens to be written on the same line.
 SECRET_ALLOW="$HARNESS_ROOT/.secret-allow"
-SECRET_USED=$(mktemp) || fail "cannot create a temp file"
+SECRET_USED=$(mktemp "${TMPDIR:-/tmp}/harness.XXXXXX") || fail "cannot create a temp file"
 trap 'rm -f "$SECRET_USED"' EXIT
 suppress() { # suppress <family>; stdin: path:line:text hits
   local kind="$1"

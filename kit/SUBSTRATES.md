@@ -45,6 +45,10 @@ shipping in one trusted target, that exact target needs its own policy. HTTPS
 Git and sandboxed `gh` need both `github.com` and `*.github.com`; the wildcard
 does not cover the apex domain.
 
+On macOS, shell scripts must pass `mktemp` an explicit template below
+`${TMPDIR:-/tmp}`. A bare call can choose a system temp root outside the agent
+sandbox even when the host provides a writable temporary directory.
+
 Writes under `.claude/` and `.git/` are host-protected. Claude Code may still
 ask for a yes/no approval or route them through its auto-mode classifier even
 when an allow rule exists. That is a host safety boundary, not a reason to hand
