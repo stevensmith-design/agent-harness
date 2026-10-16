@@ -40,7 +40,7 @@ for p in procedures/*.md; do
   [ "$status" = "retired" ] && continue
 
   out="$ROOT/.claude/skills/$id/SKILL.md"
-  tmp=$(mktemp) || { fail "cannot create a temp file"; continue; }
+  tmp=$(mktemp "${TMPDIR:-/tmp}/harness-kit.XXXXXX") || { fail "cannot create a temp file"; continue; }
   {
     printf -- '---\n'
     printf 'name: %s\n' "$id"

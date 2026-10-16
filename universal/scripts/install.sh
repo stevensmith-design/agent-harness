@@ -41,7 +41,7 @@ before it adds governance files."
 # plus untracked ones .gitignore does not exclude. Outside git (a downloaded
 # archive), the same local state is filtered by name. Regenerated views —
 # .claude/skills and .claude/rules, rebuilt by `make setup` — never ship.
-LIST=$(mktemp) || c_die "cannot create a temp file"
+LIST=$(mktemp "${TMPDIR:-/tmp}/harness.XXXXXX") || c_die "cannot create a temp file"
 INSTALL_LIST="$LIST.install"
 trap 'rm -f "$LIST" "$INSTALL_LIST" "$INSTALL_LIST.next"' EXIT
 if git -C "$SRC" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
