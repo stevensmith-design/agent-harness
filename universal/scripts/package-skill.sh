@@ -50,7 +50,7 @@ fm, body = m.group(1), m.group(2)
 # skill, so the packaged variant must say that it carries the scaffold.
 DESC = ('description: Install or adapt a stack-agnostic AI-agent development harness into a '
         'repository — instruction graph, path-scoped rules, portable skills, one command surface, '
-        'deterministic gates, hooks, permission tiers, generated CI/CD, and opt-in governance and '
+        'deterministic gates, narrow hooks, scoped permissions, generated CI/CD, and opt-in governance and '
         'evals. The full scaffold is bundled in assets/. Use when setting up agent tooling in a new '
         'or existing repo, hardening a repo where agents repeat the same mistakes, or consolidating '
         'scattered agent rules (CLAUDE.md, .cursorrules, copilot-instructions) into one owned source.')

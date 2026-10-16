@@ -24,4 +24,4 @@ The Drive folder that holds the harness, who owns it, and each Doc or Sheet the 
 
 ## Checkpoint
 
-No commit here. The finish-time hook where the AI tool runs hooks, and `bash scripts/checkpoint.sh` as the last step of every procedure. Drive's per-file version history helps you recover a file, but it is not a record of which rules changed together — keep `learning/changelog.md` up to date.
+No commit here. Use `bash scripts/checkpoint.sh` as the last step of every procedure. Do not attach the full suite to every attempt to end a conversation. Drive's per-file version history helps you recover a file, but it is not a record of which rules changed together — keep `learning/changelog.md` up to date.

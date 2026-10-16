@@ -1,6 +1,6 @@
 # Harness Starter Kit
 
-**v0.14.0** — **Harnessify anything.**
+**v0.15.0** — **Harnessify anything.**
 
 Tell it about your work, or point it at where your work already lives — a folder, a repository, your Slack or Notion — and it builds a harness around how your team actually works.
 
@@ -50,8 +50,8 @@ or template. It never sends or posts anything automatically.
 and templates are treated as instructions or executable code, not as harmless
 attachments. The generated harness includes a capability-intake procedure,
 portable metadata and instruction-trust scans, provenance and content pins,
-sensitive-read blocking, and a rule that an authorised human—not an agent—runs
-the approved install.
+sensitive-read blocking, and an explicit approval before an agent runs the
+exact scoped install. Privileged, global, and download-to-shell forms stay blocked.
 
 **Any kind of work.** Software, design, business development, marketing, client delivery — and every domain nobody has catalogued yet. Where a ready-made pack exists it is a shortcut; where none does, the kit derives what it needs from your context. Your domain is never "not supported".
 

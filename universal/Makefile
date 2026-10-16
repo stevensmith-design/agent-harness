@@ -9,16 +9,16 @@
 SHELL := /bin/bash
 RUN := ./scripts/run.sh
 
-.PHONY: help setup env-init install-hooks deps dev dev-mock check lint format \
+.PHONY: help setup env-init install-hooks link-skills deps dev dev-mock check harness-check lint format \
         format-check typecheck test cov codegen codegen-watch build e2e verify \
         check-tokens check-secrets check-data check-spec check-protected check-budget check-branch \
         check-rules check-supply pin-actions migrate migrate-status migrate-new db-reset \
         ci-gen ci-gen-check deploy deploy-plan deploy-promote deploy-rollback deploy-status \
         harness-package doctor requirements-check check-product \
         harness-sync harness-sync-check harness-verify harness-init \
-        tier-explore tier-build tier-release skills-list skills-add skills-verify \
+        skills-list skills-add skills-verify \
         skills-update skills-vendored check-skills \
-        governance-check evals ci check-hooks check-evidence findings \
+        governance-check evals ci harness-ci check-hooks check-evidence findings \
         check-invariants check-learning check-api check-agreements retro-evidence render-audit
 
 help: ## List every command
@@ -52,12 +52,15 @@ link-skills: ## Symlink .agents/skills into .claude/skills (one tree, many tools
 	@# `[ -d "$$d" ] ||continue` is load-bearing: with .agents/ absent the glob
 	@# expands to itself and this used to create symlinks literally named '*',
 	@# which harness-verify then reported forever and link-skills could not repair.
-	@for d in .agents/skills/*/; do [ -d "$$d" ] || continue; n=$$(basename $$d); t=".claude/skills/$$n"; \
-	  if [ -e "$$t" ] && [ ! -L "$$t" ]; then rm -rf "$$t"; fi; \
-	  [ -L "$$t" ] || ln -s "../../$$d" "$$t"; done
-	@for f in .agents/rules/*.md; do [ -f "$$f" ] || continue; n=$$(basename $$f); t=".claude/rules/$$n"; \
-	  if [ -e "$$t" ] && [ ! -L "$$t" ]; then rm -f "$$t"; fi; \
-	  [ -L "$$t" ] || ln -s "../../$$f" "$$t"; done
+	@rc=0; for d in .agents/skills/*/; do [ -d "$$d" ] || continue; n=$$(basename "$$d"); t=".claude/skills/$$n"; want="../../.agents/skills/$$n"; \
+	  if [ -L "$$t" ]; then [ "$$(readlink "$$t")" = "$$want" ] || { echo "! preserving unexpected symlink: $$t -> $$(readlink "$$t")"; rc=1; }; \
+	  elif [ -e "$$t" ]; then echo "! preserving project-owned path: $$t"; rc=1; \
+	  else ln -s "$$want" "$$t"; fi; done; \
+	for f in .agents/rules/*.md; do [ -f "$$f" ] || continue; n=$$(basename "$$f"); t=".claude/rules/$$n"; want="../../.agents/rules/$$n"; \
+	  if [ -L "$$t" ]; then [ "$$(readlink "$$t")" = "$$want" ] || { echo "! preserving unexpected symlink: $$t -> $$(readlink "$$t")"; rc=1; }; \
+	  elif [ -e "$$t" ]; then echo "! preserving project-owned path: $$t"; rc=1; \
+	  else ln -s "$$want" "$$t"; fi; done; \
+	[ "$$rc" -eq 0 ] || { echo "link-skills stopped: resolve the preserved collisions above"; exit 1; }
 	@# Clean up the literal-glob symlinks an older version could leave behind.
 	@rm -f ".claude/skills/*" ".claude/rules/*.md" 2>/dev/null || true
 	@echo "skills + rules linked"
@@ -75,7 +78,7 @@ retro-evidence: ## What happened since the last retro, and whether one is due (w
 	@./scripts/retro-evidence.sh
 
 ## ---------- Deterministic gates ----------
-check: ## Everything CI runs
+check: ## Product checks used during ordinary development
 	@# `: >` not `rm -f`: truncating is idempotent and needs no delete rights,
 	@# which matters in sandboxes and CI images where the runner cannot unlink.
 	@mkdir -p .agents/runs && : > .agents/runs/.stubs
@@ -86,7 +89,10 @@ check-overlay-gates: ## Run the gates declared by any applied overlay
 	  [ -x "scripts/gates/$$g.sh" ] || { echo "✗ overlay declares gate '$$g' but scripts/gates/$$g.sh is missing or not executable"; exit 1; }; \
 	  ./scripts/gates/$$g.sh || exit 1; \
 	done
-check-all: lint format-check typecheck test check-tokens check-design check-secrets check-data check-spec check-budget check-branch check-rules check-supply check-skills check-product check-invariants check-learning check-api check-agreements check-policy check-protected check-hooks check-overlay-gates
+check-all: lint format-check typecheck test check-secrets check-tokens check-design
+
+harness-check: check-data check-spec check-budget check-branch check-rules check-supply check-skills check-product check-invariants check-learning check-api check-agreements check-policy check-protected check-hooks harness-sync-check ci-gen-check check-overlay-gates ## Harness governance and integrity; run when harness files change
+	@./scripts/verify-harness.sh --level 2 --ci
 
 lint: ## Static analysis (adapter)
 	@$(RUN) lint
@@ -214,13 +220,6 @@ harness-sync-check: ## Fail if any generated tool file has drifted
 harness-verify: ## Is the harness intact? LEVEL=1|2|3
 	@./scripts/verify-harness.sh --level $${LEVEL:-2}
 
-tier-explore: ## Read-only permission tier
-	@cp .claude/tiers/explore.settings.json .claude/settings.json && echo "tier: explore (read-only)"
-tier-build: ## Default working tier
-	@cp .claude/tiers/build.settings.json .claude/settings.json && echo "tier: build"
-tier-release: ## Adds push/deploy, behind approval
-	@cp .claude/tiers/release.settings.json .claude/settings.json && echo "tier: release"
-
 skills-list: ## List available skills
 	@for f in .agents/skills/*/SKILL.md; do \
 	  printf "  \033[36m%-18s\033[0m %s\n" "$$(basename $$(dirname $$f))" \
@@ -240,4 +239,5 @@ governance-check: ## L3: validate governance records against schemas + semantic 
 evals: ## L4: run the eval cases (exit 2 = judge scorers ungraded, which is not a pass)
 	@./evals/run-evals.sh
 
-ci: check harness-sync-check ci-gen-check harness-verify overlay-verify gate-selftest check-evidence ## What CI runs
+ci: check ## What an installed project's ordinary CI runs
+harness-ci: harness-check overlay-verify gate-selftest ## Harness maintainers and harness-changing PRs only

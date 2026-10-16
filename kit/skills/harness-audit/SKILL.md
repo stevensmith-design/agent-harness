@@ -21,22 +21,29 @@ metadata:
 
 Run its own checks, whatever they are called, and read their denominators.
 
-## 1 · Run the mechanical half first
+## 1 · Run the proportionate mechanical half first
 
 ```
-./scripts/gate-selftest.sh     # can every gate still fail?
 ./scripts/check.sh             # do the gates pass on a clean tree?
 ./scripts/doctor.sh            # is the harness itself intact?
 ./scripts/gates/dead-config.sh # does anything read what the config claims?
 ```
 
+Run `gate-selftest.sh` only when gate code changed, the chosen lens is false
+green, or this is the scheduled full harness-health audit. It deliberately rigs
+every failure and is maintainer-depth evidence, not the entrance fee for every
+review.
+
 **Read the denominators, not the ticks.** `✓ secret scan` with no count cannot be distinguished from "I examined nothing".
 
 If `gate-selftest.sh` does not exist, or has fewer cases than there are gates, that is finding one and it outranks everything else. A gate that has only ever met a clean tree is unverified, and it is the most common shape a harness defect takes.
 
-## 2 · Pick one lens
+## 2 · Pick one lens and a timebox
 
 **One per pass, rotating.** A fixed checklist run every time calcifies into something that passes trivially.
+Default to 15 minutes and one lens. A scheduled full audit may use two named
+lenses and 30 minutes. Stop at the timebox with a bounded, honest denominator;
+do not keep searching merely to justify the review.
 
 | Lens | Asks |
 |---|---|

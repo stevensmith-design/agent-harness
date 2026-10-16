@@ -1,7 +1,7 @@
 ---
 name: api-design
 description: Conventions for HTTP endpoints and service contracts — shape, errors, versioning, idempotency. Delete for a project with no API.
-paths: ["src/**", "app/**", "api/**", "server/**", "services/**", "lib/**", "routes/**", "handlers/**"]
+paths: ["src/**", "app/**", "api/**", "server/**", "services/**", "lib/**", "routes/**", "handlers/**", "server.*"]
 trigger: glob
 ---
 

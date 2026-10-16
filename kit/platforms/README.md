@@ -15,9 +15,9 @@ Two questions, answered separately, because they almost never have the same answ
 
 | Home | Good for | What enforces the rules | Watch out for |
 |---|---|---|---|
-| **Git repository** | Teams comfortable with branches and reviews; anyone who needs an audit trail | The commit checkpoint, CI, and the finish-time checkpoint | Everyone who maintains the harness has to use git |
-| **Synced shared folder** — Google Drive, OneDrive or SharePoint, Dropbox, Box, iCloud Drive | Non-developer teams who already share work this way | The finish-time checkpoint where the AI tool runs hooks; the checkpoint step before every handover | Conflict copies; online-only files; native Google and Office files that are links, not text. See the platform page |
-| **Local folder** | One person | The finish-time checkpoint and the checkpoint step | Nothing is shared and nothing is backed up unless you arrange it |
+| **Git repository** | Teams comfortable with branches and reviews; anyone who needs an audit trail | The commit checkpoint, CI, and the deliberate checkpoint before handover | Everyone who maintains the harness has to use git |
+| **Synced shared folder** — Google Drive, OneDrive or SharePoint, Dropbox, Box, iCloud Drive | Non-developer teams who already share work this way | The checkpoint step before handover in every live procedure | Conflict copies; online-only files; native Google and Office files that are links, not text. See the platform page |
+| **Local folder** | One person | The deliberate checkpoint step | Nothing is shared and nothing is backed up unless you arrange it |
 | **Knowledge tools only** — Notion, Confluence, SharePoint pages, Slack | Not a home for the harness files: they cannot hold or run scripts | — | Pair one with a folder above. The harness lives in the folder; the knowledge stays where it is |
 
 A synced folder is a **first-class home**, not a fallback. `../SUBSTRATES.md` covers what changes without git; `../detect.sh` reports which kind of home it is looking at and names the sync service when it recognises one.
@@ -32,7 +32,10 @@ In a repository, a check can sit at the commit, where every change has to pass. 
 | **A repository** | Runs before every commit | The owner, once: `git config core.hooksPath scripts/hooks` |
 | **Any home, any tool** | The last step of every procedure, before a person looks: `bash scripts/checkpoint.sh`. The result is recorded in `runs/.state/checkpoints` and cited in the handover | The procedure template |
 
-**Be honest about which one is active.** Whether a given desktop app runs project hooks is not always documented. Until you have watched the finish-time checkpoint fire in your own setup, treat the procedure step as the checkpoint.
+**Be honest about which one is active.** The procedure step is the portable
+checkpoint. Do not claim a host-enforced finish checkpoint unless the chosen
+host provides one and the team deliberately enabled it; the core template does
+not, because ordinary conversation should not trigger the full suite.
 
 **Everything runs through `bash`.** Shared drives, downloads and zip files strip the "executable" setting from scripts, so nothing in the harness depends on it. On Windows, the AI tool needs a bash to run them — for Claude Code that means installing Git for Windows.
 

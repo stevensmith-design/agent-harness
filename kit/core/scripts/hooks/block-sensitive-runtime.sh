@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # PreToolUse for Read|Grep|Glob|Bash. Prevents sensitive values entering agent
-# context and prevents the agent itself from installing third-party code.
+# context and blocks privileged or download-to-execute installation shortcuts.
+# Ordinary scoped installs go through settings.json's ask rules after intake.
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 input=""; [ -t 0 ] || input=$(cat)
 [ -n "$input" ] || exit 0
@@ -32,8 +33,8 @@ case "$tool" in
       printf '%s\n' "Blocked: shell commands may not reference a sensitive file; even a harmless-looking command can surface it in agent-visible output." >&2
       exit 2
     fi
-    if printf '%s\n' "$value" | grep -qiE '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z|fi)?sh|(^|[;&|[:space:]])sudo[[:space:]]|(^|[;&|[:space:]])((brew|apt|apt-get|yum|dnf|pacman|winget|choco|scoop)[[:space:]]+install|npm[[:space:]]+(ci|i|install|add|update|exec)|pnpm[[:space:]]+(install|add|update|dlx)|yarn[[:space:]]+(install|add|up|dlx)|bun[[:space:]]+(install|add|x)|bunx|python[0-9]*[[:space:]]+-m[[:space:]]+pip[[:space:]]+install|pip3?[[:space:]]+install|uv[[:space:]]+(add|sync|tool[[:space:]]+install)|poetry[[:space:]]+add|cargo[[:space:]]+(add|install)|go[[:space:]]+(get|install)|gem[[:space:]]+install|(flutter|dart)[[:space:]]+pub[[:space:]]+(add|get)|npx|corepack[[:space:]]+(enable|prepare|use|install))([;&|[:space:]]|$)'; then
-      printf '%s\n' "Blocked: this harness does not let an agent install or auto-execute third-party code. Run capability-intake; an authorised human performs the approved install." >&2
+    if printf '%s\n' "$value" | grep -qiE '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(ba|z|fi)?sh|(^|[;&|[:space:]])sudo[[:space:]]|(^|[;&|[:space:]])((brew|apt|apt-get|yum|dnf|pacman|winget|choco|scoop)[[:space:]]+install|npm[[:space:]]+(exec|[^;&|]*[[:space:]]-g)|pnpm[[:space:]]+(dlx|[^;&|]*[[:space:]]-g)|yarn[[:space:]]+(dlx|global)|bunx|npx|uv[[:space:]]+tool[[:space:]]+install|cargo[[:space:]]+install|go[[:space:]]+install|gem[[:space:]]+install|corepack[[:space:]]+(enable|prepare|use|install))([;&|[:space:]]|$)'; then
+      printf '%s\n' "Blocked: privileged, global, or download-to-execute installation is outside this harness boundary. Use capability-intake and a scoped package-manager install through the normal approval prompt." >&2
       exit 2
     fi ;;
 esac

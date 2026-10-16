@@ -1,10 +1,8 @@
 <!-- HARNESS-SYNC:CLAUDE-TAIL -->
 ## Claude Code specifics
 
-Everything above is the shared rulebook. Only Claude-specific mechanics belong below.
-
-- Permission tier is set in `.claude/settings.json`. Swap tiers with `make tier-explore | tier-build | tier-release`.
-- Hooks in `.claude/hooks/` enforce the non-negotiables mechanically — format/typecheck after every edit, a block on protected-path writes, and a stop-gate that refuses to end a run with no evidence written. If a hook blocks you, fix the cause; do not route around it.
+- `.claude/settings.json` permits normal branch, PR, merge, and owned-worktree commands. Never push to the default branch or alter another owner's work.
+- Hooks guard sensitive reads, undeclared package installation, and protected harness edits. Product checks run at intentional checkpoints, not after every edit or when ending a turn.
 - Skills live in `.agents/skills/` and are symlinked into `.claude/skills/`. Edit the `.agents/` copy.
-- Risky or parallel work goes in a worktree (`--worktree <name>`), never in the main checkout.
-- Use the `reviewer` subagent for independent review — it must not be the same context that produced the code.
+- Risky or parallel work goes in an owned worktree. Remove your clean, merged worktree; preserve unknown or dirty work.
+- Review standard/high-risk changes once. Low-risk changes use deterministic checks and a producer checklist.

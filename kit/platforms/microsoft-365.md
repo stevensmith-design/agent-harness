@@ -23,4 +23,4 @@ The library or folder that holds the harness, the tenant admin who granted conse
 
 ## Checkpoint
 
-No commit here. The finish-time hook where the AI tool runs hooks, and `bash scripts/checkpoint.sh` as the last step of every procedure. Library version history does not replace `learning/changelog.md`.
+No commit here. Use `bash scripts/checkpoint.sh` as the last step of every procedure; do not attach the full suite to every attempt to end a conversation. Library version history does not replace `learning/changelog.md`.

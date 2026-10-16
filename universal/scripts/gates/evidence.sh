@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Evidence gate — the CI half of `.claude/hooks/gate-done.sh`.
+# Evidence gate for repositories that opt into committed run evidence.
 #
 # The harness's definition of done ends with "evidence exists in .agents/runs/".
 # Until now the only thing enforcing that was a Claude Code Stop hook: one tool,

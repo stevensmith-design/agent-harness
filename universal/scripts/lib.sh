@@ -292,6 +292,27 @@ todo() {
   mkdir -p "$(dirname "$STUB_MARK")" 2>/dev/null || true
   printf '%s\n' "$*" >> "$STUB_MARK" 2>/dev/null || true
 }
+
+# generic_check <verb> <description>
+# An absent capability is different from an unfinished adapter. Projects may
+# declare the former as `none: <reason>`; everything else remains NOT VERIFIED.
+generic_check() {
+  local verb="$1" description="$2" status reason
+  status="$(cfg "checks.$verb" unconfigured)"
+  case "$status" in
+    none:*)
+      reason="${status#none:}"; reason="${reason# }"
+      [ -n "$reason" ] || fail "checks.$verb says none but gives no reason"
+      info "$verb: N/A — $reason"
+      ;;
+    unconfigured)
+      todo "$description"
+      ;;
+    *)
+      fail "checks.$verb is '$status'. Put the real command in an adapter, or use \"none: <reason>\"."
+      ;;
+  esac
+}
 stubbed() { [ -s "$STUB_MARK" ]; }
 stub_summary() {
   stubbed || return 0
@@ -346,7 +367,7 @@ glob_re() {
 # glob_alt <glob-list> — a bracketed/comma list as ONE alternation. Globs in a
 # `paths:` list are alternatives (OR); ANDing them was a real bug once.
 glob_alt() {
-  printf '%s' "$1" | tr -d '[]"'"'" | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$' \
+  printf '%s' "$1" | tr -d '[]"'"'" | tr ',' '\n' | sed 's/^ *//; s/ *$//' | { grep -v '^$' || true; } \
   | sed 's/\./\\./g; s|\*\*/|<ANYDIR>|g; s/\*\*/<ANY>/g; s|\*|[^/]*|g; s|<ANYDIR>|(.*/)?|g; s/<ANY>/.*/g' \
   | paste -sd'|' - | sed 's/^/^(/; s/$/)$/'
 }

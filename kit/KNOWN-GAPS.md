@@ -10,7 +10,7 @@ Ranked by what would hurt first.
 
 Moved here from the README, which describes what the kit does. This section records how far that has been verified.
 
-**v0.14.0 — built, self-verified, adversarially reviewed, not yet installed on a real engagement.**
+**v0.15.0 — built, self-verified, adversarially reviewed, not yet installed on a real engagement.**
 
 | | |
 |---|---|
@@ -294,13 +294,20 @@ bare names or every local format without becoming a false-positive generator.
 
 `ANATOMY.md` §11 describes three self-protection mechanisms. The core now ships
 a Claude `PreToolUse` boundary that blocks sensitive reads, environment dumps,
-download-to-shell forms and agent-run package installation. The split gate and
+privileged/global installs and download-to-shell forms. Scoped installs proceed
+only after capability intake and a normal permission approval. The split gate and
 deny-by-default classification remain the tool-independent controls. Cursor,
 Codex, Windsurf and shared-folder hosts still need equivalent runtime renderers.
 
-## 11b · The finish-time checkpoint is only as good as the host
+## 11b · Checkpoints are intentional, not conversational
 
-`scripts/checkpoint.sh` ships, wired as a Claude Code Stop hook and as an opt-in git pre-commit hook. Whether other hosts — Claude's desktop apps, Cursor, Codex — run project hooks is not established here, so in those the checkpoint is the procedure step, which is followed rather than enforced. The loop breaker lets a session finish after three failed attempts; that is a deliberate trade against a hook people switch off, and it means a determined agent can outlast it. On Windows the scripts need a bash, such as the one Git for Windows provides. **None of this has yet been observed on a real team's shared drive.**
+`scripts/checkpoint.sh` ships as an opt-in git pre-commit hook and as the final
+step of live procedures. The former is enforced once enabled; the latter is
+followed rather than host-enforced. A blocking Stop hook was removed after field
+use showed that it reran the suite whenever an agent tried to finish and could
+trap the session on pre-existing debt. On Windows the scripts need a bash, such
+as the one Git for Windows provides. **The workspace procedure checkpoint has
+not yet been observed on a real team's shared drive.**
 
 ## 11c · The improvement loop has only run on fixtures
 

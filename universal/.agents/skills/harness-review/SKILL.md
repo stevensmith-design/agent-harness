@@ -1,6 +1,6 @@
 ---
 name: harness-review
-description: Independent, comment-only review of a change — read the diff in a fresh context, check it against the rules and the spec, report findings and a verdict. Reviewer side, writes nothing. Use to review someone else's or an agent's work before merge; for driving your own PR to mergeable use /harness-pr.
+description: One proportional review of a standard- or high-risk change — read the diff in a fresh isolated context, check it against the applicable rules and spec, then report findings and a verdict. Never edits product code. Low-risk changes use deterministic checks and the producer checklist.
 license: MIT
 metadata:
   harness.tier: gate
@@ -13,27 +13,46 @@ The probabilistic gate, between the scripts and the human.
 
 | Use it when | Do not use it when |
 |---|---|
-| Reviewing a change you did not write | Reviewing your own change — you will rationalise it |
+| Reviewing a standard- or high-risk change you did not write | A low-risk change already covered by deterministic checks and the producer checklist |
 | A PR is green on deterministic gates | The deterministic gates are red — fix those first, they are cheaper |
 | Before requesting a human approval | You intend to fix what you find — that is a different lane |
 
-**Owns:** findings and a verdict. **Mutates:** nothing. This skill has no write
-tools on purpose. The moment a reviewer can push a fix, it stops being an
-independent review and the producer has certified its own work through a proxy.
+**Owns:** findings and a verdict. **Mutates:** review findings/evidence only,
+never product code, tests, rules, or contracts. The moment a reviewer can push a
+fix, it stops being independent and the producer has certified its own work
+through a proxy. Use an isolated worktree or read-only checkout; never share a
+writable checkout with the producer.
+
+## Choose depth before reading
+
+Use the smallest level that covers the blast radius. Diff size is only a clue.
+
+| Level | Use when | Scope | Timebox |
+|---|---|---|---|
+| **Focused** (default) | Local, low-risk change inside one module | Changed behavior, files, tests, and directly affected output | 10 min |
+| **Standard** | User-visible flow, API boundary, or cross-module change | Changed flow plus adjacent contracts and error paths | 20 min |
+| **Full** | High-risk intent or a sensitive path below | Complete affected surface plus `/harness-security-review` | 45 min |
+
+Documentation, merge-only, generated evidence, and review-only changes receive
+a Focused review only when they can alter instructions or shipped behaviour;
+otherwise deterministic gates are sufficient. At the timebox, stop and return
+`INCOMPLETE` with assessed and unassessed scope. Do not manufacture more work or
+silently treat an incomplete review as approval.
 
 ## Procedure
 
-1. **Fresh context.** If you produced this change, stop and hand it to another
-   actor. Independence is the gate; "I'll be objective" is not a substitute.
+1. **Fresh, isolated review context.** The reviewer reads and records findings;
+   the producer remains responsible for fixing, committing, and pushing its own PR.
 2. Confirm the deterministic gates passed. If not, report that and stop.
 3. Read in order: `AGENTS.md` → the rules in `.agents/rules/` whose `paths:`
    match the changed files → the active spec → any ADR touching those modules.
-4. Read the diff: `git diff <base>...HEAD`. Read the whole diff before writing
-   anything — findings written while still reading are usually wrong.
+4. Read the scoped diff: `git diff <base>...HEAD`. Read all changed code in the
+   selected scope before writing findings. Focused review does not require an
+   unrelated repository survey.
 5. For anything user-visible, look at the rendered result or a screenshot, not
    just the code. Token drift is invisible in a diff.
 
-## Escalate by path, not by size
+## Escalate by path and impact, not by size
 
 Before reviewing, check what the diff touches. A one-line change to any of these
 gets a full review and a `/harness-security-review` pass regardless of how small it
@@ -88,8 +107,19 @@ digest of the file as it stood, so when the code changes the finding shows as
 Write the claim as *concrete inputs → wrong output*, in one line — that line is
 all the next reader gets.
 
-Then one verdict line: `APPROVE` or `REQUEST_CHANGES`, and record the run:
+Then one verdict line: `APPROVE` or `REQUEST_CHANGES`, and record the run. Stop
+after two rounds, when there are no actionable findings, when a finding repeats,
+or when the same fix fails twice. Repeated findings become a human discussion;
+they do not start an unbounded review loop.
+
+Record the run:
 `./scripts/emit-evidence.sh review "<your-actor-id>" pass|fail "<n> blocking"`.
+
+If time expires before the selected scope is covered, return `INCOMPLETE` and do
+not emit passing review evidence. Existing debt outside the changed surface is
+reported separately and does not block this change unless the change introduced
+or worsened it, the changed area owns it, it is a security/safety issue, or the
+acceptance criteria explicitly include it.
 
 `make findings` lists what is open and what has gone stale on this branch.
 

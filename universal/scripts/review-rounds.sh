@@ -15,7 +15,7 @@
 # different machine — unlike the local evidence trail).
 . "$(dirname "$0")/lib.sh"
 
-CAP=$(cfg git.max_review_rounds 3)
+CAP=$(cfg git.max_review_rounds 2)
 # A cap that cannot be read must not quietly become no cap. `[ "$CAP" -gt 0 ]`
 # on a non-number is a shell ERROR, and the `|| ok "disabled"` that used to
 # follow it turned every typo in the config into a switched-off loop guard.

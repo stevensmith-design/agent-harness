@@ -15,7 +15,7 @@ A harness is **the structure around an agent that makes its behaviour repeatable
 Three obligations follow:
 
 1. **Instruct** — say what is true here, and route to exactly one authoritative source per rule.
-2. **Enforce** — make the rules that matter *checkable*: scripts, hooks, tests, schemas, CI gates, permission tiers, human approvals.
+2. **Enforce** — make the rules that matter *checkable*: scripts, narrow hooks, tests, schemas, CI gates, scoped permissions, human approvals.
 3. **Maintain** — turn repeated failures into durable artifacts in the layer that owns them, so the thing improves instead of drifting.
 
 A prompt library does (1). A linter does part of (2). A harness does all three, wired together.
@@ -82,7 +82,7 @@ Skills are focused, repeatable procedures. Use the portable [Agent Skills](https
 Two disciplines make skills composable:
 
 - **Separate provenance.** *Workflow* skills (your team's procedures, authored here) and *capability* skills (imported framework know-how, pinned by hash in a lockfile) have different lifecycles. Do not mix them in one folder.
-- **Draw the fence first.** Every skill opens with a *when to use / when NOT to use* table. A skill with no stated non-goal expands until it collides with its neighbours. The `review` (comment-only, read tools only) vs a fix-it lane is the canonical split — the moment a reviewer can push a fix, it stops being an independent review.
+- **Draw the fence first.** Every skill opens with a *when to use / when NOT to use* table. A skill with no stated non-goal expands until it collides with its neighbours. The `review` (product-read-only; only findings/evidence may be written) vs a fix-it lane is the canonical split — the moment a reviewer can push a product fix, it stops being an independent review.
 
 `description` is the only part loaded before the skill fires. It is the trigger, not the summary. Write it as *what* and *when*.
 
@@ -107,24 +107,32 @@ There is a second ordering, by *when* rather than by cost:
 
 Each rung catches what the cheaper one missed. Prevention is worth disproportionate investment: a pre-commit format check costs one second and removes an entire category of review comments forever.
 
-### 3.7 Hooks — the part most harnesses skip
+### 3.7 Hooks — narrow, immediate safeguards
 
-Instructions are advisory. An agent under pressure to finish will rationalise its way past prose. Hooks are not advisory: they run every time, with no thinking required, and a blocking hook stops the tool call.
+Hooks run on every matching action, so their cost compounds quickly. Ship one
+only when it prevents immediate, local harm and cannot sensibly wait for a
+checkpoint.
 
-The four worth shipping by default:
+The default hooks are deliberately narrow:
 
-1. **Post-edit** — format and typecheck the file that just changed. *Success is silent, failures are verbose.* A hook that chatters on every edit is disabled within a day.
-2. **Protected-path** — deny writes to `AGENTS.md`, `.agents/**`, workflows, ADRs. The agent may not rewrite its own constraints mid-task. Almost nobody guards this, and it is the single most damaging failure mode there is: an agent that cannot pass a gate quietly relaxing the gate.
-3. **Stop gate** — refuse to end a run that changed source but left no evidence.
-4. **Session start** — inject branch, active spec, and permission tier, so the agent does not begin by guessing.
+1. **Sensitive access** — stop credential contents entering model context.
+2. **Package installation** — require a recorded dependency intent before changing the supply chain.
+3. **Protected harness paths** — require an explicit harness-edit intent before changing enforcement while doing product work.
+4. **Session start** — report the branch and active spec without blocking work.
+
+Formatting, typechecking and evidence run at intentional checkpoints. There is
+no default post-edit or Stop hook: multi-file work is often temporarily broken,
+and ending a conversational turn is not the same event as declaring work done.
 
 The decision rule: *if something must happen every time and requires no thinking, it is a hook, not a sentence in an instruction file.*
 
-### 3.8 The producer cannot self-certify
+### 3.8 Review is proportional; ownership preserves momentum
 
-The strongest single governance idea, and the one that survives contact with every stack.
-
-The agent that built the work must not be the sole authority that declares it done. Concretely, every important exit needs at least one of: a validator exit code, a review by a **different actor in a fresh context**, an inspection of the rendered artifact, or a named human approval.
+Low-risk work is covered by deterministic checks and the producer's checklist.
+Standard-risk work receives one read-only review in a fresh context. Configured
+high-risk surfaces add authenticated human approval through the hosting platform.
+The producer may fix, commit and push its own PR after review; independence
+constrains the reviewer, not the producer's ability to finish routine work.
 
 **How much is each of those worth?** That is a separate question from who they name, and running them together is how "an agent ran a script" quietly becomes "a human approved this". Records carry an explicit `trust` rung, weakest to strongest:
 
@@ -144,6 +152,15 @@ And be clear about the limit of the mechanism itself: these records are files, a
 
 Fresh context is doing real work in that sentence. A reviewer that remembers writing the code will defend it. `.harness/` enforces the rule literally — actor identity separation checked by a validator, with schema-valid-but-semantically-invalid fixtures proving the check actually fires — but the lightweight version (a separate review lane with no write tools) captures most of the value for none of the ceremony.
 
+Fresh context must also mean a separate write boundary: use an isolated worktree
+or read-only checkout, never a producer and reviewer writing concurrently in one
+checkout. Review depth is proportional per change: Focused by default, Standard
+for cross-module or user-flow impact, Full only for sensitive paths or genuinely
+high-risk surfaces. Timebox them at 10/20/45 minutes. A reviewer reports findings;
+the producer repairs, and only evidence invalidated by that repair is rechecked.
+Pre-existing debt is named separately instead of expanding local work into an
+unplanned remediation programme.
+
 ### 3.9 State and evidence that outlive the conversation
 
 A fresh agent must reconstruct "where are we" from files, not chat history. Plans, decisions, approvals, artifacts, open questions and validation results live in a system of record. **If the only record of a decision is in a chat window, it does not exist.**
@@ -160,16 +177,18 @@ Plus a run trail (`.agents/runs/*.jsonl`) whose field names echo the OpenTelemet
 
 Blast radius should match trust. Read by default; earn write.
 
-Three named tiers — `explore` (read-only, planning), `build` (edits and local commands, the default), `release` (push and deploy, behind approval) — swappable as config fragments. Two things to know:
-
-- **Deny beats allow, absolutely.** A broad allow cannot carry a deny exception. Write the deny and narrow the allow.
-- **Permission rules govern the agent's tool calls, not the processes it starts.** A script the agent runs can open any file the OS permits. Where an OS-level sandbox is available, turn it on; filesystem and network allowlists are the real boundary.
+One ownership-based policy allows routine branch, PR, merge and clean-worktree
+commands. It continues to deny destructive history rewriting and sensitive
+reads; deployment, release and dependency changes remain explicit approval
+boundaries. Repository branch protection is the authoritative default-branch
+control.
 
 The branching model belongs here too. An agent with no stated convention invents
 a different one each session, and long-lived branches become unreviewable before
 they land. Write it down (`.agents/rules/git-flow.md`), then make the mechanical
 half checkable — branch name, commit shape, and branch size are all greppable,
-and the permission tiers already deny force-push and direct-to-main.
+and repository protection denies direct-to-main while the local policy denies
+destructive force-push and hard reset.
 
 And isolate risky or parallel work: one worktree (or container) per agent, on its own branch. Isolation is what makes fan-out safe, and fan-out is most of the speed.
 
@@ -211,7 +230,7 @@ The most common failure is applying product-CI ceremony to a one-page memo. Matc
 |---|---|---|
 | **L0 Guidance** | reference examples, a checklist | always — it is free |
 | **L1 Standardised** | canonical templates, tokens, output contracts, a command surface | more than one person or agent touches the code |
-| **L2 Guarded** | validators, scanners, hooks, permission tiers, CI gates | a mistake would reach a user or another team |
+| **L2 Guarded** | validators, scanners, narrow hooks, scoped permissions, CI gates | a mistake would reach a user or another team |
 | **L3 Orchestrated** | stateful workflows, approvals, isolation, evidence records | wrong order or self-certification would genuinely hurt — auth, payments, deletion, release, regulated work |
 | **L4 Learning** | run telemetry, an eval set, write-back | you are running enough agent work that trends matter more than incidents |
 

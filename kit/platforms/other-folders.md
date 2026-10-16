@@ -16,7 +16,7 @@ If the harness folder is also where the documents are, the AI reads them directl
 
 ## Checkpoint
 
-No commit here. The finish-time hook where the AI tool runs hooks, and `bash scripts/checkpoint.sh` as the last step of every procedure. File version history in these services can recover a file; it does not record which rules changed together, so keep `learning/changelog.md`.
+No commit here. Use `bash scripts/checkpoint.sh` as the last step of every procedure; do not attach the full suite to every attempt to end a conversation. File version history in these services can recover a file; it does not record which rules changed together, so keep `learning/changelog.md`.
 
 ## Moving to a repository later
 

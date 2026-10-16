@@ -1,7 +1,7 @@
 ---
 name: domain-invariants
 description: Domain constraints that are not shapes, and which side enforces each one. Applies to any code that implements or relies on a business rule, and to API proposals.
-paths: ["src/**", "app/**", "lib/**", "api/**", "server/**", "services/**", "routes/**", "handlers/**", "migrations/**", "db/**", "prisma/**", "alembic/**", "docs/api-proposal/**"]
+paths: ["src/**", "app/**", "lib/**", "public/**", "api/**", "server/**", "services/**", "routes/**", "handlers/**", "migrations/**", "db/**", "prisma/**", "alembic/**", "docs/api-proposal/**", "server.*"]
 trigger: glob
 ---
 

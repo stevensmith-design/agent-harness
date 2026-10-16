@@ -199,7 +199,12 @@ Contracts are also the seam between harnesses: work crosses to another team only
 
 Cheapest and most objective first. Regex and validators catch the cheap 80%; AI judgment handles what regex cannot see; humans handle only genuine decisions.
 
-**The producer never self-certifies.** Every important exit needs an external check: a validator exit code, a separate review lane, an artifact inspection, or a logged human approval. Harnesses fail quietly when the agent can sign its own work.
+**The producer never self-certifies consequential judgement.** Every important
+exit needs evidence proportionate to what can go wrong: a validator may be
+enough for low-risk mechanical work; judgement-bearing or externally
+consequential work needs a separate review, artifact inspection, or logged
+human approval. Requiring an independent reviewer for every deterministic
+change manufactures ceremony rather than confidence.
 
 Three rules that are usually learned the hard way:
 
@@ -207,7 +212,9 @@ Three rules that are usually learned the hard way:
 - **A gate you have never observed failing is a gate you have no evidence works.** Every gate ships with a case that rigs the violation and asserts rejection, plus a clean-tree pass. In this kit's template that is `scripts/gate-selftest.sh`; where no such script exists, the retro opens by breaking each gate on purpose. A gate that has only ever run on a clean tree has never been tested.
 - **A stub is not a pass.** A TODO that prints green is worse than a missing check.
 
-**Write permission is a tier, not a default.** Review lanes are read-only; mutation requires explicit invocation and structural isolation.
+**Review reports; the producer repairs.** Review lanes do not mutate the work
+they judge. Once findings exist, the owning producer may fix them and continue
+the delivery lifecycle without turning each command into a human handoff.
 
 ---
 

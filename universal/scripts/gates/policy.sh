@@ -56,22 +56,42 @@ CHANGED=$(changed_files "$BASE")
 SURF=$(surfaces)
 [ -n "$SURF" ] || { info "no surfaces: defined — every change is treated the same"; ok "surface policy (no surfaces declared)"; exit 0; }
 
+# Compile each surface's glob list once. The old nested loop rebuilt the regex
+# for every changed-file/surface pair, spawning thousands of sed/tr processes
+# in a normal repository (89 seconds in the first production install).
+SURF_RE=""
+while IFS=$'\t' read -r id paths risk level; do
+  [ -n "$id" ] || continue
+  re=$(glob_alt "$paths")
+  [ -n "$re" ] || continue
+  SURF_RE="${SURF_RE}${id}"$'\t'"${re}"$'\t'"${risk}"$'\t'"${level}"$'\n'
+done <<< "$SURF"
+
 touched=""; max_risk="low"; max_lvl="L1"; unclassified=""
-while IFS= read -r f; do
-  [ -n "$f" ] || continue
-  hit=0
-  while IFS=$'\t' read -r id paths risk level; do
-    [ -n "$id" ] || continue
-    re=$(glob_alt "$paths"); [ -n "$re" ] || continue
-    if printf '%s\n' "$f" | grep -qE "$re"; then
+# Classify the entire matrix in one awk process. Even with precompiled regexes,
+# invoking grep once for every file/surface pair still cost tens of seconds.
+CLASSIFIED=$({ printf '%s' "$SURF_RE"; printf '__FILES__\n'; printf '%s\n' "$CHANGED"; } | awk -F '\t' '
+  $0 == "__FILES__" { files=1; next }
+  !files { n++; id[n]=$1; re[n]=$2; risk[n]=$3; level[n]=$4; next }
+  $0 != "" {
+    hit=0
+    for (i=1; i<=n; i++) if ($0 ~ re[i]) {
+      print "HIT\t" id[i] "\t" risk[i] "\t" level[i]
       hit=1
-      case ",$touched," in *",$id,"*) : ;; *) touched="${touched:+$touched,}$id" ;; esac
-      [ "$(risk_rank "$risk")" -gt "$(risk_rank "$max_risk")" ] && max_risk="$risk"
-      [ "$(lvl_rank "$level")" -gt "$(lvl_rank "$max_lvl")" ] && max_lvl="$level"
-    fi
-  done <<< "$SURF"
-  [ "$hit" = 1 ] || unclassified="${unclassified}${f}"$'\n'
-done <<< "$CHANGED"
+    }
+    if (!hit) print "MISS\t" $0
+  }
+')
+while IFS=$'\t' read -r kind value risk level; do
+  [ -n "$kind" ] || continue
+  if [ "$kind" = MISS ]; then
+    unclassified="${unclassified}${value}"$'\n'
+    continue
+  fi
+  case ",$touched," in *",$value,"*) : ;; *) touched="${touched:+$touched,}$value" ;; esac
+  [ "$(risk_rank "$risk")" -gt "$(risk_rank "$max_risk")" ] && max_risk="$risk"
+  [ "$(lvl_rank "$level")" -gt "$(lvl_rank "$max_lvl")" ] && max_lvl="$level"
+done <<< "$CLASSIFIED"
 
 if [ -z "$touched" ]; then
   info "no declared surface matches this change"

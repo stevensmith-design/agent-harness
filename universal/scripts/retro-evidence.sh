@@ -172,7 +172,7 @@ printf 'Questions          %s open, %s older than %s days\n' "$Q_OPEN" "$Q_STALE
 RV_F=0; RV_OPEN=0; RV_ROUNDS_OVER=""
 # This script does not source lib.sh (its set -e would end a report early), so
 # it borrows cfg in a subshell — the same shape as MAIN above.
-RV_CAP=$( . scripts/lib.sh >/dev/null 2>&1 && cfg git.max_review_rounds 3 2>/dev/null ) || RV_CAP=3
+RV_CAP=$( . scripts/lib.sh >/dev/null 2>&1 && cfg git.max_review_rounds 2 2>/dev/null ) || RV_CAP=2
 case "$RV_CAP" in ''|*[!0-9]*) RV_CAP=0 ;; esac   # unreadable cap: report no branch as over it
 for f in .agents/reviews/*.md; do
   [ -f "$f" ] || continue

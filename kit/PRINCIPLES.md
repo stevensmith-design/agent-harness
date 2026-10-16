@@ -43,12 +43,12 @@ It deliberately restates nothing. Each row names the claim, the organ it tests, 
 
 | # | The claim | Organ | Anti-pattern |
 |---|---|---|---|
-| D1 | Machine checks run before AI judgment, which runs before human attention | Gates | **Human as first filter** |
-| D2 | Nothing important is signed off by whoever produced it | Gates | **Self-certifying agent** |
+| D1 | Cheap relevant machine checks run before AI judgment, which runs before human attention; unrelated harness-health checks are not charged to ordinary work | Gates | **Human as first filter**, and its twin, **governance as task tax** |
+| D2 | Judgement-bearing or consequential work is not signed off solely by whoever produced it; low-risk mechanical work need not manufacture independence | Gates | **Self-certifying agent**, and its twin, **review theatre** |
 | D3 | Every gate reports its denominator | Gates | **The bare tick** — `✓` that cannot be distinguished from "examined nothing" |
 | D4 | Every gate has been observed failing, by a test that rigs the violation | Gates | **Never-red gate** — passes only because it has only met clean trees |
 | D5 | A stub, a skip, or a missing input is never reported as a pass | Gates | **False green** |
-| D6 | Review lanes are read-only; mutation is opt-in and isolated | Gates | **Ambient write permission** |
+| D6 | Review lanes report without mutating; the producer may fix findings and continue the owned delivery flow | Gates | **Ambient review mutation** and **human command handoff** |
 | D7 | Harness health and work compliance are separate commands with separate verdicts | Doctor≠validate | **The meaningless green tree** |
 | D8 | Rules are encoded as detectable patterns wherever possible | Gates | **Prose rule** — decays; a detectable rule compounds |
 | D9 | The same command runs locally and in CI | Gates | **Local-only green** |

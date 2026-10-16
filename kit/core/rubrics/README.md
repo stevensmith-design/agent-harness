@@ -94,7 +94,7 @@ criteria:
   - id: stable-kebab-id
     severity: fix
     rule: "One sentence"
-    checked_by: scripts/gates/<gate>.sh   # or: reviewer
+    checked_by: scripts/work-checks/<check>.sh   # or: reviewer
 ```
 
 `checked_by` is the field that keeps a rubric honest. A criterion checked by `reviewer` is legitimate. A criterion that names a gate which does not exist is exactly the defect `../scripts/gates/dead-config.sh` exists to find.

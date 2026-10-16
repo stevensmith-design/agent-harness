@@ -18,6 +18,37 @@ Git, one command surface, hooks, CI where the checks are worth running.
 
 **Cost:** everyone who maintains the harness must be willing to branch and open a PR. That is a real cost and it is the only one that should decide against it.
 
+That cost belongs to the agent when the agent owns the work. A repository
+harness should let it create a right-sized branch or isolated worktree, commit,
+push, open and merge a PR once the declared checks and review are satisfied,
+then remove only the clean branch and worktree it created. It should ask for a
+normal tool approval when the host requires one, not turn routine lifecycle work
+into commands for the person to copy. One branch carries one coherent,
+reviewable outcome; independently shippable or differently risky work separates.
+
+### Claude Code on macOS
+
+If the harness enables Claude Code's shell sandbox and the repository uses an
+SSH remote, direct `git fetch`, `git pull`, and `git push` need narrow
+`sandbox.excludedCommands` entries and matching permission allows. The macOS
+sandbox cannot complete Git-over-SSH authentication even when the host is on
+the network allowlist. Keep the exception to those three command families:
+excluded commands have the user's full filesystem, credential, and network
+access.
+
+Command shape matters. Run each network Git operation as a separate direct
+command. A `cd` chain, `git -C`, command substitution, loop, script, or `make`
+target does not match a direct Git exclusion; if a project deliberately wraps
+shipping in one trusted target, that exact target needs its own policy. HTTPS
+Git and `gh` need both `github.com` and `*.github.com`; the wildcard does not
+cover the apex domain.
+
+Writes under `.claude/` and `.git/` are host-protected. Claude Code may still
+ask for a yes/no approval or route them through its auto-mode classifier even
+when an allow rule exists. That is a host safety boundary, not a reason to hand
+the person a shell script. The agent should request the approval in the tool,
+or clearly ask the person to switch temporarily to a mode that can present it.
+
 ---
 
 ## Workspace — a folder, synced or local
@@ -37,7 +68,7 @@ Which service, what it can read, and how to connect the team's other tools: [`pl
 | Commit SHAs | Run provenance cannot cite repo state | Record a dated snapshot of the foundations consumed |
 | Diffs on rule changes | The ratchet is not auditable | `learning/changelog.md` becomes mandatory, not optional |
 | Pre-write hooks | No mechanical self-protection | Harness edits become a declared, logged step in the retro |
-| The commit, as a checkpoint | Checks run when someone remembers — the failure a harness exists to prevent | `scripts/checkpoint.sh` takes its place: a finish-time hook where the AI tool runs hooks, and the last step of every procedure everywhere else, with each result recorded in `runs/.state/checkpoints` |
+| The commit, as a checkpoint | Checks run when someone remembers — the failure a harness exists to prevent | `scripts/checkpoint.sh` is the last step of every procedure, with each result recorded in `runs/.state/checkpoints`; do not make every attempt to end a conversation run the suite |
 | CI | No second, independent run | Gates still run through the checkpoint, with the denominator reported |
 
 **What a synced folder adds, and the kit handles:** scripts lose their executable setting in sync and downloads, so everything runs through `bash`; two people editing at once leave conflict copies, which `doctor` flags; and native Google or Office online files are links rather than text, which `doctor` flags when one sits where the AI is meant to read.
@@ -53,7 +84,8 @@ Which service, what it can read, and how to connect the team's other tools: [`pl
 | Constitution | `AGENTS.md`; a pack may generate tool-specific copies from it | `AGENTS.md`, read by the client |
 | Config | `harness.yaml` | `harness.yaml` |
 | Surfaces | `config/surfaces.tsv`, read by a script | `config/surfaces.tsv`, read by a procedure |
-| Gates | `scripts/gates/*.sh`, in `check`, the commit checkpoint and CI | `scripts/gates/*.sh`, through `scripts/checkpoint.sh` at finish and before handover |
+| Work checks | `scripts/work-checks/*.sh`, in `check`, the commit checkpoint and CI | `scripts/work-checks/*.sh`, through `scripts/checkpoint.sh` before handover |
+| Harness health | `scripts/harness-check.sh` when harness files change | `scripts/harness-check.sh` after intentional harness maintenance |
 | Doctor | `scripts/doctor.sh` | `scripts/doctor.sh`, run by the AI or by hand |
 | Evidence | `runs/<date>-<procedure>/` + SHA | `runs/<date>-<procedure>/` + foundation snapshot |
 | Protection | Split gate + declared intent; a pre-write hook where the runtime has one | Declared step, logged in the retro |

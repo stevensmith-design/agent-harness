@@ -20,20 +20,26 @@ so the artifact can never be newer than the checks that passed.
 ## Adopt it
 
 ```bash
-./scripts/install.sh <your-repo>     # refuses to clobber; carries no .git
+./scripts/install.sh <your-repo>     # additive; requires an existing Git repo
 cd <your-repo>
 git switch -c chore/install-harness  # the gates refuse to run on the default branch
-make setup                           # env, hooks, skill symlinks, deps
+make setup                           # env sample, hooks and skill symlinks; no packages
 make harness-init                    # fill in harness.config.yaml (or run /harness-init)
 make check                           # must go green before you trust anything else
 make harness-verify                  # is the harness itself intact?
 ```
 
+That is the complete adopter verification path. `make gate-selftest` exercises
+the harness implementation itself and is for maintainers; do not make every
+product adoption wait for the full adversarial fixture suite.
+
 Do not use `cp -R`. With a trailing slash it nests the harness inside your repo;
 without one, the shell glob drops every dotfile — `.agents/`, `.claude/`,
 `.github/`, `.githooks/` — which is two thirds of the harness, and `make setup`
-will report success on what is left. `install.sh` also stops rather than
-overwriting a `Makefile`, `README.md` or `CLAUDE.md` you already have.
+will report success on what is left. `install.sh` never overwrites a project
+file. For a shared-name collision it installs everything else, writes the
+harness version as `<name>.harness-candidate`, and exits with the explicit
+not-activated state until a person reconciles the two.
 
 `make setup` creates the `.claude/skills/` and `.claude/rules/` symlinks into
 `.agents/`. They are not committed as symlinks, because archive extraction and
@@ -55,7 +61,7 @@ overwriting them, and stops on the first failed gate.
 ├── HARNESS-GUIDE.md                why each part exists
 ├── HARNESS-MANIFEST.md             this file
 ├── Makefile                        the one command vocabulary
-├── .env.sample .gitignore .worktreeinclude .mcp.json.example
+├── .env.sample .gitignore .worktreeinclude .mcp.json.example .secret-allow
 ├── skills-lock.json                ★ vendored capability skills, pinned by commit + hash
 │
 ├── .agents/                        canonical, tool-neutral
@@ -65,9 +71,8 @@ overwriting them, and stops on the first failed gate.
 │   └── runs/                       evidence trail (*.jsonl)
 │
 ├── .claude/                        Claude Code view
-│   ├── settings.json               active permission tier + hooks
-│   ├── tiers/{explore,build,release}.settings.json
-│   ├── hooks/{session-start,block-protected,block-sensitive-access,block-package-install,post-edit-check,gate-done}.sh
+│   ├── settings.json               one ownership-based permission policy
+│   ├── hooks/{session-start,block-protected,block-sensitive-access,block-package-install}.sh
 │   ├── agents/reviewer.md          independent reviewer, no write tools
 │   └── skills/ rules/              symlinks into .agents/
 │
@@ -76,7 +81,7 @@ overwriting them, and stops on the first failed gate.
 │   ├── copilot-instructions.md     GENERATED — do not edit
 │   ├── instructions/*.md           GENERATED — do not edit
 │   ├── pull_request_template.md    evidence contract, enforced in CI
-│   └── workflows/{gates,governance,agent-review}.yml
+│   └── workflows/{gates,harness,governance,agent-review}.yml
 ├── .githooks/pre-commit            prevent locally what CI can only detect
 ├── .gitattributes                  marks generated views linguist-generated
 ├── .mcp.json.example               placeholder MCP servers — tokens by ${VAR} only
@@ -149,11 +154,13 @@ overwriting them, and stops on the first failed gate.
 - [ ] Replace `<placeholders>` — `grep -rn '<[a-z-]*>' AGENTS.md .env.sample docs/`.
 - [ ] Point `design.tokens_path` at your real token layer, or set
       `design.enabled: false` and delete `.agents/rules/design-tokens.md`.
+- [ ] Add local databases, exports, recordings, and similar files to both
+      `security.sensitive_paths` and the project's ignore rules.
 - [ ] Set the toolchain step in your **adapter's `ci_setup()`**, then run
       `make ci-gen`. Do not edit `.github/workflows/gates.yml` directly — it is
       generated, and `make ci` fails on a hand-edit.
 - [ ] `make install-hooks`, then confirm `git config core.hooksPath` = `.githooks`.
-- [ ] Pick a starting tier: `make tier-build` (or `tier-explore` for a cautious start).
+- [ ] Confirm the default branch and repository protection used by the PR workflow.
 - [ ] Turn the two or three rules your team most cares about into `design.forbid`
       entries or new gate scripts.
 - [ ] Delete what you do not have. An unused rule teaches agents that rules here
@@ -165,7 +172,7 @@ overwriting them, and stops on the first failed gate.
 |---|---|---|
 | L1 | instruction graph, rules, skills, command surface, ADRs, specs, product register + decision ledger, design system + review | it is on |
 | L2 | gates, hooks, tiers, CI, PR contract, sync drift check | it is on (**default**) |
-| L3 | `docs/devlog/`, `docs/incidents/`, `.harness/` workflows, lifecycle SOP, evidence schemas with an explicit `trust` rung, producer-cannot-self-certify validator | `governance.enabled: true` + `level: L3` |
+| L3 | `docs/devlog/`, `docs/incidents/`, `.harness/` workflows, lifecycle SOP, evidence schemas with explicit trust, risk-based independent review | `governance.enabled: true` + `level: L3` |
 | L4 | `evals/` cases, deterministic + judge scorers, a verdict ledger bound to the rubric it judged | `evals.enabled: true` |
 
 Three rules run underneath all four rungs, because each closes a way a green

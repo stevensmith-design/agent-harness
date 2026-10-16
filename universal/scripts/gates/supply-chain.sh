@@ -99,7 +99,21 @@ fi
 # --- 3. lockfile --------------------------------------------------------------
 if [ "$LOCK_POLICY" != "off" ]; then
   have_manifest=0; have_lock=0
-  for m in package.json pubspec.yaml pyproject.toml requirements.txt go.mod Cargo.toml Gemfile; do
+  # A package.json can describe a zero-dependency Node program. Requiring an
+  # empty lockfile there adds no reproducibility and contradicts the diagnostic
+  # below, which says dependencies are declared. Parse it rather than treating
+  # the mere existence of a manifest as a dependency declaration.
+  if [ -f "$HARNESS_ROOT/package.json" ]; then
+    package_has_dependencies=$(python3 - "$HARNESS_ROOT/package.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+keys = ('dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies')
+print('1' if any(isinstance(d.get(k), dict) and d[k] for k in keys) else '0')
+PY
+    ) || fail "package.json is not valid JSON — cannot determine lockfile policy"
+    [ "$package_has_dependencies" = 1 ] && have_manifest=1
+  fi
+  for m in pubspec.yaml pyproject.toml requirements.txt go.mod Cargo.toml Gemfile; do
     [ -f "$HARNESS_ROOT/$m" ] && have_manifest=1
   done
   for l in package-lock.json pnpm-lock.yaml yarn.lock bun.lock bun.lockb pubspec.lock \

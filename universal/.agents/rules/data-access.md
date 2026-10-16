@@ -1,7 +1,7 @@
 ---
 name: data-access
 description: Rules for schema, migrations, and queries. Applies to database and data-layer code. Delete for a project with no datastore.
-paths: ["migrations/**", "db/**", "prisma/**", "src/**/repositories/**", "src/**/models/**", "src/**/db/**", "app/models/**", "alembic/**", "**/schema.*"]
+paths: ["migrations/**", "db/**", "prisma/**", "src/**/repositories/**", "src/**/models/**", "src/**/db/**", "app/models/**", "alembic/**", "**/schema.*", "server.*"]
 trigger: glob
 ---
 

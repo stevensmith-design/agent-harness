@@ -1,7 +1,7 @@
 ---
 name: tests-and-evidence
 description: What counts as proof that a change works. Applies to source and test files.
-paths: ["src/**", "lib/**", "app/**", "tests/**", "test/**"]
+paths: ["src/**", "lib/**", "app/**", "public/**", "tests/**", "test/**", "server.*"]
 trigger: glob
 ---
 

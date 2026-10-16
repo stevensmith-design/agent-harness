@@ -23,12 +23,12 @@ strip_comments() {
     }
     print out }'
 }
+clean_body=$(printf '%s\n' "$body" | strip_comments | tr -d '\r')
 # section <heading> — the section's text: comments, blank lines and unticked
 # template boxes removed. The heading must match exactly — "## Not verified yet"
 # is not the section.
 section() {
-  printf '%s\n' "$body" | strip_comments \
-    | tr -d '\r' \
+  printf '%s\n' "$clean_body" \
     | awk -v h="## $1" '{ l = $0; sub(/[[:space:]]+$/, "", l) } l == h { f = 1; next } /^## / { f = 0 } f' \
     | grep -vE '^[[:space:]]*$' | grep -vE '^[[:space:]]*- \[ \]' || true
 }
@@ -36,7 +36,7 @@ section() {
 rc=0
 err() { printf '::error::%s\n' "$1"; rc=1; }
 for s in "What and why" "How this was verified" "Not verified" "Blast radius"; do
-  printf '%s\n' "$body" | strip_comments | tr -d '\r' | grep -qxE "## $s[[:space:]]*" \
+  grep -qxE "## $s[[:space:]]*" <<< "$clean_body" \
     || err "PR body is missing '## $s' — do not delete template sections."
 done
 [ -n "$(section 'How this was verified')" ] \

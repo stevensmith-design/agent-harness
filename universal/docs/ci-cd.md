@@ -1,11 +1,21 @@
 # CI/CD
 
+## First-workflow bootstrap
+
+When the harness introduces a repository's first GitHub Actions workflow, the
+bootstrap pull request has no default-branch workflow to receive its
+`pull_request` event. GitHub may therefore report zero workflows and zero runs;
+closing, reopening, or polling the PR does not change that. Run the local gates,
+record CI as not verified, merge through the repository's explicit bootstrap
+policy, and confirm that the resulting push to the default branch registers and
+runs the workflow. Every later PR then uses the normal CI path.
+
 The pipeline is described **once**, in `harness.config.yaml`, and rendered per
 platform by `make ci-gen`. Moving from GitHub to GitLab is a re-render, not a
 rewrite. Generated files are committed and CI fails if they drift from the config.
 
 ```
-harness.config.yaml ─┬─► .github/workflows/{gates,deploy}.yml
+harness.config.yaml ─┬─► .github/workflows/{gates,harness,deploy}.yml
    + adapter ci_setup ├─► .gitlab-ci.yml
    + deploy modules  └─► bitrise.yml
 ```
@@ -22,13 +32,15 @@ Three things keep a CI file from having to know your stack:
 
 | Stage | Runs | Needs a toolchain? |
 |---|---|---|
-| deterministic | eight gates + drift checks + harness-verify | no — fails in seconds |
-| toolchain | deps, lint, format, typecheck, test | yes |
+| safety | secret scan on every change | no — fails in seconds |
+| toolchain | dependencies, then `make check` product checks | yes |
+| harness | governance, generated-file drift and harness integrity; only when harness paths change | no |
 | pr-contract | the PR body carries real verification evidence | no |
 | deploy | per environment, after gates pass | yes |
 
-Deterministic first is deliberate: a malformed change fails before you have paid
-for a dependency install.
+Safety first is deliberate: a leaked credential fails before dependency setup.
+Harness governance is kept out of ordinary product PRs because product work
+cannot drift files it did not change.
 
 ## Deploy environments
 

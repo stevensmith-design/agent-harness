@@ -364,18 +364,24 @@ def check_drift(root, main_branch):
     # configured one. That is the harness's own first rule broken by its newest
     # gate: a check may report "clean", or "I could not look", never the second
     # as the first.
-    try:
-        base = subprocess.check_output(
-            ["git", "-C", root, "merge-base", main_branch, "HEAD"],
-            stderr=subprocess.DEVNULL).decode().strip()
-    except subprocess.CalledProcessError:
-        base = ""
+    base = ""
+    candidates = [main_branch]
+    if not main_branch.startswith(("origin/", "refs/")):
+        candidates.append("origin/%s" % main_branch)
+    for candidate in candidates:
+        try:
+            base = subprocess.check_output(
+                ["git", "-C", root, "merge-base", candidate, "HEAD"],
+                stderr=subprocess.DEVNULL).decode().strip()
+            break
+        except subprocess.CalledProcessError:
+            pass
     if not base:
         note("cannot resolve a merge base between '%s' and HEAD, so there is "
              "nothing to compare an agreed shape against. Fetch the base branch "
              "(a shallow clone has no merge base), or set git.main_branch in "
              "harness.config.yaml to the branch this repo actually uses."
-             % main_branch)
+             % "/".join(candidates))
         return
 
     rels = sorted(set(

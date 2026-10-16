@@ -17,16 +17,20 @@ changed=$(changed_files "$BASE")
 
 # Deny by default: classify by the INVERSE of an allowlist. Enumerating protected
 # paths means every path added later is silently unprotected — the harness grows,
-# and the gate quietly stops covering the new parts. Listing what is *product*
-# code instead means anything new defaults to protected and someone has to say so.
+# and the gate quietly stops covering the new parts. Listing what is *project
+# owned* instead means anything new defaults to protected and someone has to say so.
 # The root-file branch used to be a blanket `^[^/]+\.(md|json|lock|txt)$`, which
 # classified AGENTS.md, CLAUDE.md and skills-lock.json — the rulebook itself and
 # the supply-chain pin — as PRODUCT code. The gate that exists to stop an agent
-# relaxing its own constraints did not cover its own constraints. Root files are
-# now allowlisted by name, and the rulebook is not on the list.
-PRODUCT='^(src/|lib/|app/|test/|tests/|assets/|public/|migrations/|specs/|docs/(devlog|incidents|product|architecture|api-proposal)/)|^(README|CHANGELOG|LICENSE|CONTRIBUTING|SECURITY)(\.md)?$|^(package|pubspec|pyproject|go|Cargo|composer)\.(json|yaml|toml|mod|lock)$|^[^/]*\.(lock|txt)$|^\.(gitignore|gitattributes|editorconfig|nvmrc|prettierignore|prettierrc.*|eslintrc.*|env\.sample)$'
-other=$(printf '%s\n' "$changed" | sgrep -E -e "$PRODUCT" --)
-prot=$(printf '%s\n' "$changed" | sgrep -Ev -e "$PRODUCT" --)
+# relaxing its own constraints did not cover its own constraints. Project paths
+# are explicit in config; ordinary package metadata remains project-owned. The
+# rulebook is deliberately in neither list and therefore stays protected.
+defaults='["src/**", "lib/**", "app/**", "public/**", "server/**", "server.mjs", "test/**", "tests/**", "design/**", "DESIGN.md", "tokens.json"]'
+configured_re=$(glob_alt "$(cfg project.product_paths "$defaults")")
+metadata_re='^(assets/|migrations/|specs/|docs/(devlog|incidents|product|architecture|api-proposal)/)|^(README|CHANGELOG|LICENSE|CONTRIBUTING|SECURITY)(\.md)?$|^(package|pubspec|pyproject|go|Cargo|composer)\.(json|yaml|toml|mod|lock)$|^[^/]*\.(lock|txt)$|^\.(gitignore|gitattributes|editorconfig|nvmrc|prettierignore|prettierrc.*|eslintrc.*|env\.sample)$'
+PROJECT_OWNED="(${configured_re})|(${metadata_re})"
+other=$(printf '%s\n' "$changed" | sgrep -E -e "$PROJECT_OWNED" --)
+prot=$(printf '%s\n' "$changed" | sgrep -Ev -e "$PROJECT_OWNED" --)
 
 if [ -n "$prot" ] && [ -n "$other" ]; then
   warn "this change edits the harness AND product code in one PR:"

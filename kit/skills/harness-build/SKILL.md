@@ -97,7 +97,8 @@ Then merge the client's existing rules, routing each to its owner:
 | A decision with a rationale | a line in `decisions/log.md`; a full record in `decisions/` where one line is not enough |
 | A fact about how the work goes, not a rule | `memory/`, dated and sourced |
 | "Before doing X, read Y" | a row in `read-first.md` |
-| Checkable by a script | `scripts/gates/` **and** cited in the rule |
+| Checks the produced work | `scripts/work-checks/` **and** cited in the rule |
+| Checks the harness itself | `scripts/gates/` **and** cited in the rule |
 | Background and rationale | docs |
 
 Then supersede the originals in place with a pointer. **Two copies of one rule is worse than none** — they drift and the agent obeys whichever it read last.
@@ -118,7 +119,24 @@ Only the checks the rungs justify.
 
 Every gate added gets a case in `scripts/gate-selftest.sh` **in the same change**: one input it must flag, one it must not. A gate with no self-test is a gate you have no evidence works.
 
-**Wire the checkpoint for this home.** Every harness ships `scripts/checkpoint.sh`. In a repository, tell the owner how to turn on the commit checkpoint — never turn it on for them. In a workspace, confirm the finish-time hook is present and make sure every procedure ends with the checkpoint step. Record which checkpoints are actually active; see `platforms/README.md` §2.
+**Wire the checkpoint for this home.** Every harness ships `scripts/checkpoint.sh`. In a repository, enable the commit checkpoint when the person asked for an operational harness; otherwise offer the one normal approval instead of handing them commands. In a workspace, make every live procedure end with the checkpoint step. Do not install a blocking Stop hook: it makes every conversation pay for the full suite and can trap the agent on pre-existing debt. Record which checkpoints are active; see `platforms/README.md` §2.
+
+For repository substrates, configure routine owned-work automation: branch or
+isolated worktree, commit, push, PR, merge after required checks/review, remote
+branch deletion, and clean owned-worktree removal. Preserve unknown or dirty
+work. The agent requests an ordinary tool approval when required; it never
+prints a shell recipe for the person to execute. Size branches by one coherent
+reviewable outcome: combine inseparable changes, split independently shippable
+or differently risky work.
+
+If Claude Code sandboxing is enabled on macOS with SSH remotes, exclude direct
+`git fetch *`, `git pull *`, and `git push *` calls from the sandbox and pair
+them with narrow allow rules. Keep them as separate commands: `cd` chains,
+loops, substitutions, `git -C`, scripts, and `make` targets do not match those
+exclusions. Keep `gh` sandboxed where HTTPS works; allow only the required PR
+subcommands and include both `github.com` and `*.github.com` in the network
+allowlist. Excluded commands have full user credential and host access, so do
+not broaden this to arbitrary shell or `gh *` without a real need.
 
 **Connections.** If the harness reads anything outside its own folder, copy `platforms/templates/connections.md` to `config/connections.md` and fill it in. Copy `mcp.json.example` or `env.example` only where a connection needs it — and never an `.env` into a shared drive.
 
@@ -143,7 +161,7 @@ Then print the summary:
 - Motion, packs applied, surfaces and their rungs
 - Rules migrated: old path → new owner, for each
 - Gates enforcing, and **gates deliberately deferred with the reason**
-- **Which checkpoints are active** — commit, finish-time hook, procedure step — and which were only recommended
+- **Which checkpoints are active** — commit and procedure step — and which were only recommended
 - What ran through it, and what happened
 - **The improvement loop:** who runs the retro, whether the session-start reminder will reach them (it needs a host that runs hooks — otherwise name a calendar reminder), and whether transcript mining is available here
 - **What still needs a human, named explicitly**

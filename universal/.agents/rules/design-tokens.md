@@ -1,7 +1,7 @@
 ---
 name: design-tokens
 description: UI must be built from design tokens and shared components, never raw values. Delete this rule for non-UI projects.
-paths: ["src/**", "app/**", "lib/**"]
+paths: ["src/**", "app/**", "lib/**", "public/**", "assets/**", "styles/**"]
 trigger: glob
 ---
 

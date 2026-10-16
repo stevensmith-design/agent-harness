@@ -2,7 +2,7 @@
 
 For people changing the kit itself — its skills, packs and theory. Using the kit needs none of this; start at [`README.md`](README.md).
 
-Run `./check-kit.sh` before and after every change, and `./check-kit-selftest.sh` whenever you touch a check. **When you change anything in `core/`, also install it into a throwaway project and run its `scripts/doctor.sh` and `scripts/gate-selftest.sh`** — `check-kit.sh` does not run the template's own gates, so a doc that trips one (a backticked example that looks like a path, say) only shows up there. A check no case can kill is a check nobody is maintaining.
+Run `./check-kit.sh` after a coherent change, and `./check-kit-selftest.sh` whenever you touch the kit's checker. **When you change anything in `core/`, also install it into a throwaway project and run `scripts/harness-check.sh`; run `scripts/gate-selftest.sh` when gate behavior changed or before release.** The first checks the configured machinery; the second proves its rejection paths and is intentionally maintainer-depth work. A check no case can kill is a check nobody is maintaining.
 
 ## The kit stands alone
 
