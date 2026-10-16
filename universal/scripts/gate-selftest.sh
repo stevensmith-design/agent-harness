@@ -1379,8 +1379,8 @@ hdr "ownership-based Git and PR authority"
 build_repo
 run pass "routine branch pushes and PR merges are available" --expect "ownership-authority" \
   bash -c 'grep -qF "Bash(git fetch:*)" .claude/settings.json && grep -qF "Bash(git push:*)" .claude/settings.json && grep -qF "Bash(gh pr merge:*)" .claude/settings.json && echo ownership-authority'
-run pass "macOS SSH Git network commands use narrow sandbox exclusions" --expect "ssh-git-exclusions" \
-  bash -c 'grep -qF '\''"excludedCommands": ["git fetch *", "git pull *", "git push *"]'\'' .claude/settings.json && grep -qF '\''"github.com"'\'' .claude/settings.json && echo ssh-git-exclusions'
+run pass "macOS Git and GitHub network commands use narrow sandbox exclusions" --expect "ssh-git-exclusions" \
+  bash -c 'grep -qF '\''"excludedCommands": ["git fetch *", "git pull *", "git push *", "gh *"]'\'' .claude/settings.json && grep -qF '\''"github.com"'\'' .claude/settings.json && echo ssh-git-exclusions'
 run pass "network Git instructions preserve matchable command shapes" --expect "simple-git-network-commands" \
   bash -c 'grep -qF "Run network Git commands" .agents/rules/git-flow.md && grep -qF "Do not hide them" .agents/rules/git-flow.md && echo simple-git-network-commands'
 run pass "destructive history rewriting remains denied" --expect "destructive-denied" \
