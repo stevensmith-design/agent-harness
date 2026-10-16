@@ -14,7 +14,7 @@
 
 CHECK=0; [ "${1:-}" = "--check" ] && CHECK=1
 OUT="$HARNESS_ROOT"
-if [ "$CHECK" = 1 ]; then OUT=$(mktemp -d); trap 'rm -rf "$OUT"' EXIT
+if [ "$CHECK" = 1 ]; then OUT=$(mktemp -d "${TMPDIR:-/tmp}/harness.XXXXXX"); trap 'rm -rf "$OUT"' EXIT
   mkdir -p "$OUT/.cursor/rules" "$OUT/.github/instructions"
 fi
 TARGETS="$(cfg harness.targets '[claude, cursor, copilot]' | tr -d '[]" ')"

@@ -9,7 +9,7 @@
 . "$(dirname "$0")/lib.sh"
 ROOT=$(harness_root "$(dirname "$0")") || exit 1
 
-TMP=$(mktemp -d) || exit 1
+TMP=$(mktemp -d "${TMPDIR:-/tmp}/harness-kit-selftest.XXXXXX") || exit 1
 trap 'rm -rf "$TMP"' EXIT
 cp -R "$ROOT/." "$TMP/" 2>/dev/null
 rm -rf "$TMP/.git"
@@ -628,6 +628,12 @@ else
 fi
 rm -rf "$TMP/.fakebin"
 
+printf '#!/usr/bin/env bash\nt=$(%s -d); echo "$t"\n' mktemp > "$TMP/scripts/zz-bare-mktemp.sh"
+chmod +x "$TMP/scripts/zz-bare-mktemp.sh"
+expect_fail_saying "doctor (bare mktemp outside sandbox temp root)" "bare mktemp ignores" \
+  bash scripts/doctor.sh
+rm -f "$TMP/scripts/zz-bare-mktemp.sh"
+
 # --- the two record-forging guards, which survived deletion with a green suite -
 # Mutation testing found both: delete either check and gate-selftest, check-kit
 # and check-kit-selftest all stayed green. A check no case can kill is a check
@@ -785,7 +791,7 @@ mv "$TMP/.dlog.bak" "$TMP/decisions/log.md"
 # Writing the journal and the decision log DURING work is the habit these files
 # exist for; the split gate must not treat it as a harness change. A fresh repo,
 # because the cases above leave harness edits in the shared one.
-_cs=$(mktemp -d) && cp -R "$ROOT/." "$_cs/" 2>/dev/null && rm -rf "$_cs/.git"
+_cs=$(mktemp -d "${TMPDIR:-/tmp}/harness-kit.XXXXXX") && cp -R "$ROOT/." "$_cs/" 2>/dev/null && rm -rf "$_cs/.git"
 ( cd "$_cs" && git init -q . && git add -A >/dev/null 2>&1 && \
   git -c user.email=t@t -c user.name=t commit -qm base >/dev/null 2>&1 ) || true
 printf 'content\n' >> "$_cs/foundations/README.md"

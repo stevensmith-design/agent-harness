@@ -46,8 +46,8 @@ if [ -z "$PRIOR" ]; then
   finish
 fi
 
-A=$(mktemp) || { fail "cannot create a temp file — refusing to report a result"; finish; }
-B=$(mktemp) || { fail "cannot create a temp file — refusing to report a result"; finish; }
+A=$(mktemp "${TMPDIR:-/tmp}/harness-kit.XXXXXX") || { fail "cannot create a temp file — refusing to report a result"; finish; }
+B=$(mktemp "${TMPDIR:-/tmp}/harness-kit.XXXXXX") || { fail "cannot create a temp file — refusing to report a result"; finish; }
 ids "$NEW" > "$A"; ids "$PRIOR" > "$B"
 
 n_new=$(nlines "$A")

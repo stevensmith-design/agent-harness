@@ -19,7 +19,7 @@ c_ok(){ printf '\033[32m  ✓\033[0m %s\n' "$*"; }
 c_no(){ printf '\033[31m  ✗\033[0m %s\n' "$*"; }
 hdr(){ printf '\n\033[36m▸\033[0m %s\n' "$*"; }
 
-WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/harness-selftest.XXXXXX"); trap 'rm -rf "$WORK"' EXIT
 build_repo() {
   rm -rf "$WORK/r"; mkdir -p "$WORK/r"
   # Copy only version-controlled harness inputs. Copying the working directory
@@ -239,7 +239,7 @@ build_repo
 # was never deleted, cfg_req found it, and the case reported a tick while proving
 # nothing. That is the exact hole `setup` exists to close — found when an unrelated
 # `mkdir /tmp/x` elsewhere on the box turned this green.
-setup bash -c 'tmp=$(mktemp) && grep -v "^  branch_pattern:" harness.config.yaml > "$tmp" && cat "$tmp" > harness.config.yaml && rm -f "$tmp"'
+setup bash -c 'tmp=$(mktemp "${TMPDIR:-/tmp}/harness.XXXXXX") && grep -v "^  branch_pattern:" harness.config.yaml > "$tmp" && cat "$tmp" > harness.config.yaml && rm -f "$tmp"'
 run fail "a deleted policy key is detected, not defaulted" \
   bash -c '. scripts/lib.sh; cfg_req git.branch_pattern'
 build_repo
@@ -959,6 +959,16 @@ printf '#!/usr/bin/env bash\n%s -i.bak %s f.txt\n' sed "'s/x/y/'" > scripts/zz-l
 chmod 755 scripts/zz-lint.sh
 run pass "the portable  -i.bak  form is NOT flagged" --expect "sed invocations are BSD-safe" \
   bash -c './scripts/verify-harness.sh --level 2 2>&1 | grep -e "sed invocations are BSD-safe" --'
+
+build_repo
+printf '#!/usr/bin/env bash\nt=$(%s -d); echo "$t"\n' mktemp > scripts/zz-lint.sh
+chmod 755 scripts/zz-lint.sh
+run fail "a bare mktemp is flagged before it fails in a macOS sandbox" \
+  --expect "bare mktemp" ./scripts/verify-harness.sh --level 2
+
+build_repo
+run pass "shipped mktemp calls use writable temp templates" \
+  --expect "mktemp calls use a writable" ./scripts/verify-harness.sh --portability
 
 # The half neither the review nor the lint saw: `sed -i.bak` is portable, but a
 # \n in the REPLACEMENT is not. BSD sed emits a literal `n` and exits 0, so the
