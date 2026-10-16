@@ -28,7 +28,7 @@ reviewer's comments.
    Opening a red PR spends a reviewer's attention on something a script would
    have caught in thirty seconds.
 2. `git push -u origin <branch>` — the `build` tier denies push, so this needs
-   `make tier-release` or a human. That gate is deliberate.
+   push it directly. Never push the default branch or work owned by someone else.
 3. Open it against `main`, filling **every** section of
    `.github/pull_request_template.md`. Do not delete sections; CI fails on
    missing ones, and the empty-verification check fails on a section that only

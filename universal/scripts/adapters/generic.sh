@@ -6,10 +6,11 @@
 cmd_deps()         { todo "install dependencies"; }
 cmd_dev()          { todo "run the app"; }
 cmd_dev_mock()     { MOCK_MODE=true todo "run the app against stubs"; }
-cmd_lint()         { todo "lint"; }
-cmd_format()       { todo "format"; }
-cmd_format_check() { todo "format --check"; }
-cmd_test()         { todo "test"; }
+cmd_lint()         { generic_check lint "lint"; }
+cmd_format()       { generic_check format "format"; }
+cmd_format_check() { generic_check format "format --check"; }
+cmd_typecheck()    { generic_check typecheck "typecheck"; }
+cmd_test()         { generic_check test "test"; }
 cmd_build()        { todo "build"; }
 cmd_verify()       { todo "prove the app starts (see .agents/skills/harness-verify)"; }
 

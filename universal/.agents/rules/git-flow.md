@@ -6,71 +6,34 @@ trigger: always
 
 # Git flow — trunk-based
 
-Prevents: an agent inventing a different branching scheme each session, and
-long-lived branches that are unreviewable by the time they land.
+Prevents: an agent inventing a branching scheme or growing an unreviewable
+branch. The checks read the project-specific policy from `harness.config.yaml`.
 
-## The model
+- Keep the default branch releasable. Work on a short-lived branch, merge by PR,
+  delete the branch, and use tags for releases.
+- Branch names follow the configured pattern; the usual form is
+  `<type>/<ticket-or-slug>-<description>` where type is `feat`, `fix`, `chore`,
+  `docs`, `refactor`, or `spike`.
+- Use the main checkout only when it is clean and the task needs its live
+  runtime. Use an isolated worktree for dirty, parallel, or risky work. Two
+  agents never share a checkout.
+- Commits are one logical change, use the configured conventional subject, and
+  explain why when a body is needed. Never commit ignored files, secrets, or a
+  knowingly red check; never bypass the hook.
+- The producer may fix, commit, and push its own PR. Review independence means
+  the reviewer does not write the fix; it does not force a human command handoff.
+- Before merging, inspect the PR's draft state, checks, review decision, and
+  mergeability. Merge only when the requested workflow and repository protections
+  allow it. Update a behind branch and wait for checks instead of asking the user
+  to run routine commands.
+- Run network Git commands (`fetch`, `pull`, `push`) as separate, direct commands.
+  Do not hide them in `cd` chains, loops, command substitutions, or `git -C`;
+  Claude Code uses their exact command shape to apply the macOS sandbox exception.
+- Delete a merged branch and remove a clean worktree when you created and own
+  them. Preserve unknown, shared, or dirty work and report the ambiguity once.
+- Never push directly to the default branch, force-push a shared branch,
+  rewrite shared history, or alter someone else's commits.
+- Rebase your own unmerged branch only when safe; never use destructive Git
+  commands without explicit operator direction.
 
-`main` is always releasable. Work happens on a short-lived branch off `main`,
-merges back through a PR, and the branch is deleted. Releases are tags on `main`.
-There are no permanent `develop`, `release`, or `feature` branches.
-
-**Short-lived means days, not weeks.** A branch that cannot merge within a few
-days is a spec that should have been split — say so rather than growing it.
-
-## Branch names
-
-`<type>/<ticket-or-slug>-<short-description>`. Hyphenated; lowercase except a
-ticket key, which keeps its own casing.
-Types: `feat` · `fix` · `chore` · `docs` · `refactor` · `spike`.
-
-```
-feat/PROJ-118-leave-workspace
-fix/PROJ-204-expired-invite-crash
-chore/bump-node-22
-```
-
-Checked by `scripts/gates/branch-hygiene.sh`.
-
-## Where to work — the decision rule
-
-- Clean `main`, and the task needs live reload or a device/simulator → branch in
-  the main checkout.
-- `main` is dirty, or work runs in parallel with another agent, or the change is
-  risky → **cut a worktree.** `.worktreeinclude` carries `.env` across so
-  `make check` still runs there.
-
-Two agents must never share a checkout. That is not a style preference — it is
-how you get a diff nobody can attribute.
-
-## Commits
-
-`<type>(<scope>): <imperative summary>` under 72 characters. Body explains
-**why**, not what — the diff already says what.
-
-- One logical change per commit. Formatting-only changes go in their own commit.
-- Never commit generated output, `.env`, or anything from `.gitignore`.
-- Never commit with the gates red. `--no-verify` is not available to you.
-
-## Merging
-
-- PRs merge into `main` only, squash by default, branch deleted after.
-- Required before merge: deterministic gates green, the PR template's
-  verification section filled with real evidence, and an independent review by
-  someone who is not the producer.
-- Rebase onto `main` to resolve conflicts — do not merge `main` into your branch
-  repeatedly, it turns the PR into an unreadable weave.
-
-## Never
-
-- Commit or push directly to `main`.
-- `git push --force` to a shared branch. `--force-with-lease` on your own
-  unmerged branch is fine.
-- `git reset --hard`, `git rebase`, or history rewriting on anything already
-  pushed and shared.
-- Delete or amend someone else's commits.
-- Merge your own PR without an independent review.
-
-The permission tiers in `.claude/tiers/` enforce the mechanical half of this:
-`build` denies push entirely, `release` allows it but still denies force-push
-and hard reset.
+Enforced by `branch-hygiene.sh`, the Git hook, CI, and repository protection.

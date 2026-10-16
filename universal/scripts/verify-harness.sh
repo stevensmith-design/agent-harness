@@ -8,9 +8,11 @@
 
 LEVEL=1
 PORTABILITY_ONLY=0
+CI_MODE=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --level) LEVEL="$2"; shift 2;;
+    --ci) CI_MODE=1; shift;;
     # Just the harness's own code hygiene — no structure ladder, no config
     # grading. Cheap enough for `make check`, valid on an uninitialised tree.
     --portability) PORTABILITY_ONLY=1; shift;;
@@ -337,7 +339,9 @@ has .agents/memory/MEMORY.md
 has docs/decisions
 [ -n "$(find "$HARNESS_ROOT/.agents/skills" -name SKILL.md 2>/dev/null)" ] \
   && note ok "at least one skill" || note fail "no SKILL.md found under .agents/skills/"
-if [ -n "$(find "$HARNESS_ROOT/.claude/skills" -mindepth 1 -maxdepth 1 -type l 2>/dev/null)" ]; then
+if [ "$CI_MODE" = 1 ]; then
+  info "local Claude skill/rule links are not required in a clean CI checkout"
+elif [ -n "$(find "$HARNESS_ROOT/.claude/skills" -mindepth 1 -maxdepth 1 -type l 2>/dev/null)" ]; then
   broken=$(find "$HARNESS_ROOT/.claude/skills" "$HARNESS_ROOT/.claude/rules" -maxdepth 1 -type l ! -exec test -e {} \; -print 2>/dev/null)
   [ -z "$broken" ] && note ok "skill/rule symlinks resolve" || note fail "broken symlinks (re-run 'make link-skills'): $broken"
   # A skill with no link is invisible to Claude Code, and nothing says so — a
@@ -355,9 +359,15 @@ else
 fi
 grep -q '@AGENTS.md' "$HARNESS_ROOT/CLAUDE.md" 2>/dev/null \
   && note ok "CLAUDE.md imports AGENTS.md" || note fail "CLAUDE.md does not import AGENTS.md"
-grep -q '<product>' "$HARNESS_ROOT/harness.config.yaml" 2>/dev/null \
-  && note fail "harness.config.yaml still has <placeholders> — run /harness-init" \
-  || note ok "config filled in"
+if grep -q '<product>' "$HARNESS_ROOT/harness.config.yaml" 2>/dev/null; then
+  if [ "$(cfg harness.authored_here false)" = true ]; then
+    note stub "harness.config.yaml is the distributable template (expected in the harness source)"
+  else
+    note fail "harness.config.yaml still has <placeholders> — run /harness-init"
+  fi
+else
+  note ok "config filled in"
+fi
 
 if [ "$LEVEL" -ge 2 ]; then
   info "level 2 — enforcement"
@@ -380,7 +390,9 @@ if [ "$LEVEL" -ge 2 ]; then
   has .github/workflows/gates.yml
   has .github/pull_request_template.md
   has .githooks/pre-commit
-  if [ "$(git -C "$HARNESS_ROOT" config core.hooksPath 2>/dev/null)" = ".githooks" ]; then
+  if [ "$CI_MODE" = 1 ]; then
+    info "local git-hook installation is not required in CI"
+  elif [ "$(git -C "$HARNESS_ROOT" config core.hooksPath 2>/dev/null)" = ".githooks" ]; then
     note ok "git hooks installed"; else note fail "git hooks not installed — run 'make install-hooks'"; fi
   # Security-layer presence: these are the files whose absence is silent.
   has .agents/rules/security.md

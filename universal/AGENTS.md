@@ -25,7 +25,7 @@ Generated code (codegen output, API clients, build output) is a build product �
 - **Smallest diff that satisfies the spec.** No speculative abstraction, drive-by refactors, or dependency installs without explicit operator approval and `/harness-dependency-intake`.
 - **Every fallible call is handled** — caught, logged, surfaced to the user, and covered by a test.
 - **Stop and report on gate failure.** Never work around a failing check, disable a test, or loosen a lint rule to go green.
-- **Never commit or push to `main`.** Work on a short-lived branch; merge by PR after an independent review.
+- **Never commit or push directly to `main`.** Work on a short-lived branch. The agent may push, update, merge, and clean up work it owns when the requested workflow and repository protections allow it.
 - **Ambiguity is marked, not guessed.** Write `[NEEDS CLARIFICATION: question]` in the spec and stop.
 
 ## Instruction map — one owner per rule
@@ -46,8 +46,8 @@ Generated code (codegen output, API clients, build output) is a build product �
 
 ## Commands
 
-`make setup` · `make dev` · `make dev-mock` · `make check` (lint + format + typecheck + test + every gate) · `make verify` · `make harness-sync` · `make harness-verify` · `make gate-selftest`
+`make setup` · `make dev` · `make dev-mock` · `make check` (product checks) · `make verify` · `make harness-check` (harness changes only)
 
 ## Definition of done
 
-`make check` passes · the diff matches the spec · an independent reviewer (not the producer) signed off · evidence in `.agents/runs/` says pass — `not_verified` is never done.
+`make check` passes · the diff matches the spec · the configured risk-based review is complete. Low risk uses the producer checklist; standard risk gets one read-only reviewer; configured high-risk surfaces also require the repository's human approval.

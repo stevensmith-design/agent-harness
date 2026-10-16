@@ -47,6 +47,6 @@ An undocumented deviation, including a suppressed check with no matching entry, 
 
 ## Cadence
 
-- **Per piece of work:** the gates in `scripts/check.sh`, then the human gate.
+- **Per piece of work:** the relevant work checks in `scripts/check.sh`, then only the approval its surface declares.
 - **Monthly:** the retro — `procedures/harness-retro.md`.
-- **Quarterly, and before any handover:** an independent adversarial review, by someone who did not build this. Rotate the lens rather than running a fixed checklist, which calcifies into something that passes trivially.
+- **Quarterly, and before a major external or high-risk handover:** one timeboxed independent adversarial review, by someone who did not build this. Rotate the lens rather than stacking a fixed checklist on every change.

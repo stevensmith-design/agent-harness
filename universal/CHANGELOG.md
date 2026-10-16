@@ -6,6 +6,74 @@ existing one — so each entry says what an installed repo has to do.
 
 ## Unreleased — execution correctness
 
+### Additive installation and combined-harness compatibility
+
+- `install.sh` now requires a Git target and never overwrites an existing
+  project file. Shared-name collisions are preserved byte-for-byte and receive
+  a `.harness-candidate` beside them for manual reconciliation; the old
+  `--force` overwrite behavior is deprecated.
+- Empty `design.forbid[].allow` lists no longer abort the token gate, `make
+  setup` is no longer misclassified as package installation, and the
+  branch-bound harness-edit declaration now controls protected writes without
+  an unliftable settings-level deny.
+- Locked vendored skills are exempt from the authored-skill line cap while
+  remaining hash-gated. `.secret-allow` provides exact path-plus-line-substring
+  reviewed exceptions and fails on stale entries.
+- Zero-dependency `package.json` files no longer require meaningless empty
+  lockfiles. Common root-level server and `public/` layouts are included in the
+  shipped rule routes, and harness-init now requires all retained rule paths to
+  be checked against the actual repository layout.
+- The first production install also exposed avoidable execution cost. The
+  default Stop and post-edit hooks are removed; verification runs at intentional
+  checkpoints instead of after every edit or conversational turn. Commit-time secret scanning reads only
+  staged blobs, installed projects are not failed by maintainer-only size caps
+  on on-demand rules and skills, and normal project CI no longer runs the
+  harness's large rejection self-test (`make harness-ci` remains available).
+- Full secret scans now batch files instead of starting thousands of grep
+  processes. Secret exceptions are also scoped to a pattern family, so allowing
+  a fake password cannot hide a key-shaped value elsewhere on the same line.
+- Review records no longer invalidate already-recorded product evidence, and
+  the CI guide documents the one-time bootstrap when a pull request introduces
+  a repository's first workflow.
+- Always-loaded Git and security guidance was reduced to enforceable
+  non-negotiables, moving the source template from 180 to 121 lines of startup
+  context without removing its gates or on-demand security procedures.
+- Generated CI now verifies repository-owned enforcement with `--ci` instead
+  of requiring one developer's local skill links and Git hooks. `make check`
+  also checks generated instruction and workflow drift, matching pre-commit.
+- Permission tiers are replaced by one ownership-based policy. Routine branch
+  pushes, PR operations, merging and clean owned-worktree cleanup are available;
+  destructive history rewriting remains denied and release/deploy stays an
+  explicit approval boundary.
+- On macOS, direct Git fetch, fast-forward pull, and push operations now use the
+  documented unsandboxed exception so SSH remotes work without repeated retry
+  prompts. Fetch is explicitly allowed, GitHub's apex HTTPS domain is included,
+  and agent guidance keeps network operations in separately matchable commands.
+- `project.product_paths` is now the shared adaptation point for finish-time
+  evidence reminders and mixed harness/product change detection. Project-owned
+  design contracts and root server files no longer require a harness override.
+- Sensitive-access matching distinguishes credential filenames from program
+  member access such as `event.key`; environment-dump commands are matched only
+  at command boundaries.
+- Review is now risk-based and capped at two rounds. Low-risk changes use
+  deterministic checks and a producer checklist; standard/high-risk changes get
+  one read-only reviewer. The producer remains free to repair and push its own PR.
+- `make check` now runs product checks only. `make harness-check` owns governance,
+  generated-file drift and harness integrity, and generated GitHub CI runs it
+  only when harness paths change.
+- The generic adapter accepts an explicit `none: <reason>` for checks a project
+  genuinely does not have, instead of leaving CI permanently NOT VERIFIED.
+- Self-test fixtures copy only version-controlled harness inputs, never the
+  adopter's whole working tree. Skill linking preserves and reports collisions
+  rather than deleting project-owned directories.
+- PR-body validation cleans input once and avoids a long-body `pipefail` race;
+  API agreement checks fall back to `origin/<main_branch>` in CI clones that do
+  not create a local default branch.
+- `security.sensitive_paths` lets each project block local databases, exports,
+  recordings, and similar data from agent reads and shell output while allowing
+  metadata-only Git queries. The policy gate now classifies changed files in a
+  single pass instead of starting a process for every file/surface pair.
+
 ### Capability, dependency and data safety
 
 - Capability skills now pass strict portable-frontmatter and agent-trust gates.
@@ -23,7 +91,7 @@ existing one — so each entry says what an installed repo has to do.
   matched values. `.pii-allow` exceptions are path-scoped and fail when stale.
 
 Installed repos should copy the new gates, validators, hooks, dependency-intake
-skill, config keys, `.pii-allow`, settings/tiers, ignore rules and deterministic
+skill, config keys, `.pii-allow`, ownership-based settings, ignore rules and deterministic
 adapter changes; then run `make harness-sync`, `make link-skills`, and
 `make gate-selftest` before enabling them in CI.
 

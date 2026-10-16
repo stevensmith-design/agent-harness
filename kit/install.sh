@@ -99,8 +99,8 @@ if [ -z "$GITROOT" ] && ! printf '%s\n' "$collisions" | tr ' ' '\n' | grep -qx '
   sed 's/^substrate:[[:space:]]*repository/substrate: workspace/' "$TARGET/harness.yaml" > "$TARGET/.harness.yaml.tmp" \
     && mv "$TARGET/.harness.yaml.tmp" "$TARGET/harness.yaml"
   printf '\n%sNo git here — set substrate: workspace.%s\n' "$YEL" "$RST"
-  printf '  There is no commit to check at, so scripts/checkpoint.sh stands in for it: when the AI\n'
-  printf '  finishes (in tools that run hooks) and as the last step of every procedure.\n'
+  printf '  There is no commit to check at, so run scripts/checkpoint.sh explicitly at useful\n'
+  printf '  milestones and as the last step of every procedure.\n'
   printf '  Shared drive, Notion, SharePoint and the rest: see platforms/README.md in the kit.\n'
   printf '  Some harness files start with a dot (.claude, .gitignore, .pii-allow) and are hidden by\n'
   printf '  default — Finder: Cmd+Shift+. · File Explorer: View > Show > Hidden items.\n'

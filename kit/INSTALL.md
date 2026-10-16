@@ -114,11 +114,11 @@ For a first run this matters less than it sounds: the kit's own advice is **mini
 
 **No CI ships.** A repository-substrate harness at L2 needs `./scripts/check.sh` wired into its own CI. Write it; nothing generates it.
 
-**Hooks are Claude Code only.** `.claude/settings.json` wires session state,
-finish-time checking, sensitive-read blocking, and the rule that the agent does
-not install third-party code. Other hosts still get the repository/workspace
-gates and constitution, but not these pre-tool controls; render equivalent
-runtime hooks before claiming parity there.
+**Hooks are Claude Code only.** `.claude/settings.json` wires session state and
+sensitive-read blocking. Checkpoints run at deliberate procedure, commit, and
+CI boundaries rather than as a blocking finish hook. Other hosts still get the
+repository/workspace gates and constitution, but not these pre-tool controls;
+render equivalent runtime hooks before claiming parity there.
 
 ## 5 · If this is a trial
 

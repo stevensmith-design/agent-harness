@@ -33,9 +33,20 @@ or not anyone thought to ask for it.
   vendored candidate enters the live skill tree.
 - **`scripts/gates/protected-paths.sh`** — a PR that edits the harness alongside
   product code, which is how gates get quietly relaxed.
-- **Permission tiers** (`.claude/tiers/`) — the agent cannot push, cannot read
+- **Ownership-based permissions** (`.claude/settings.json`) — the agent cannot read
   `.env`, cannot edit its own rules, and is sandboxed to an allowlisted network
-  where the runtime supports it.
+  where the runtime supports it. On macOS, only direct `git fetch`, `git pull`,
+  and `git push` commands run outside the sandbox so SSH remotes can use the
+  operator's credentials. They still pass through Claude Code's allow/deny rules;
+  chained commands do not receive this exception. These Git commands therefore
+  have the operator's full host and credential access, so repository ownership
+  rules and branch protection remain the trust boundary.
+- **Project-sensitive local data** — list database files, exports, recordings,
+  or similar local-only paths in `security.sensitive_paths`. The Claude hook
+  blocks direct reads and shell output involving those globs while still
+  allowing metadata-only `git status`, `git check-ignore`, and `git ls-files`.
+  Ignore the same paths in Git; runtime disclosure and repository tracking are
+  separate boundaries.
 
 ## What you invoke
 

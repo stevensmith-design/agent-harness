@@ -14,7 +14,7 @@ if printf '%s\n' "$command" | grep -qiE '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:s
   exit 2
 fi
 
-if ! printf '%s\n' "$command" | grep -qE '(^|[;&|[:space:]])(make[[:space:]]+(deps|setup)|npm[[:space:]]+(ci|i|install|add|update|exec)|pnpm[[:space:]]+(install|add|update|dlx)|yarn[[:space:]]+(install|add|up|dlx)|bun[[:space:]]+(install|add|x)|bunx|python[0-9]*[[:space:]]+-m[[:space:]]+pip[[:space:]]+install|pip3?[[:space:]]+install|uv[[:space:]]+(add|sync|tool[[:space:]]+install)|poetry[[:space:]]+add|cargo[[:space:]]+(add|install)|go[[:space:]]+(get|install)|gem[[:space:]]+install|(flutter|dart)[[:space:]]+pub[[:space:]]+(add|get)|npx|corepack[[:space:]]+(enable|prepare|use|install))([;&|[:space:]]|$)'; then
+if ! printf '%s\n' "$command" | grep -qE '(^|[;&|[:space:]])(make[[:space:]]+deps|npm[[:space:]]+(ci|i|install|add|update|exec)|pnpm[[:space:]]+(install|add|update|dlx)|yarn[[:space:]]+(install|add|up|dlx)|bun[[:space:]]+(install|add|x)|bunx|python[0-9]*[[:space:]]+-m[[:space:]]+pip[[:space:]]+install|pip3?[[:space:]]+install|uv[[:space:]]+(add|sync|tool[[:space:]]+install)|poetry[[:space:]]+add|cargo[[:space:]]+(add|install)|go[[:space:]]+(get|install)|gem[[:space:]]+install|(flutter|dart)[[:space:]]+pub[[:space:]]+(add|get)|npx|corepack[[:space:]]+(enable|prepare|use|install))([;&|[:space:]]|$)'; then
   exit 0
 fi
 

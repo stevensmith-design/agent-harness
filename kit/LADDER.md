@@ -9,7 +9,7 @@ The rule that matters: **a trigger promotes a surface, not ambition.** Enforceme
 | Rung | What exists | Trigger to leave it |
 |---|---|---|
 | **L0 · Ad hoc** | Nothing written down. AI is used; results vary by who is at the keyboard. | Anyone makes the same correction **twice**. |
-| **L1 · Standardised** | Constitution, foundations, surfaces classified, procedures and contracts written, a human gate on everything, and a corpus accumulating judged examples. No automated checks. | A class of failure appears that **a script could have caught** — and the corpus is large enough to say what the rule actually is. |
+| **L1 · Standardised** | Constitution, foundations, surfaces classified, procedures and contracts written, a human gate where work leaves the team or carries material judgement, and a corpus accumulating judged examples. No automated quality theatre. | A class of failure appears that **a script could have caught** — and the corpus is large enough to say what the rule actually is. |
 | **L2 · Guarded** | Deterministic gates with self-tests, doctor, protected paths, one command surface, local = CI. | Repeated multi-step work that a **human keeps sequencing by hand**. |
 | **L3 · Orchestrated** | Engine-executed workflows, durable pauses, approvals as logged state transitions, isolation per run. | You **cannot tell whether a harness change helped**. |
 | **L4 · Learning** | Evals over the judged corpus, telemetry, harness health metrics, model-evolution review. | — |
