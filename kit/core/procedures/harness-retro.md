@@ -18,7 +18,7 @@ The maintenance loop. Without it a harness decays: the same correction gets made
 | The same correction has come up twice | Mid-task. Finish, then retro |
 | A run went wrong in a way nobody expected | You want to skip a gate that is working correctly |
 | The person says "again", "every time", "I already said" | The fix belongs in the work, not the harness |
-| Quarterly: an independent adversarial review is due | You built the thing — get someone who did not |
+| Quarterly, or before a major external/high-risk handover: an independent adversarial review is due | You built the thing — get someone who did not |
 
 The due triggers — a week with work in it, a month regardless, a pile-up of runs, rejections or failed checkpoints, or a standard broken again after its lesson — live in `scripts/retro-evidence.sh`, and only there.
 
@@ -126,7 +126,7 @@ As models improve, some scaffolding becomes dead code. A check that exists only 
 
 ## 10 · Independent adversarial review
 
-**Quarterly, and before any handover.** Not by whoever built the thing under review — including the agent running this retro. The reviewer needs no context from the build; that absence *is* the qualification.
+**Quarterly, and before a major external or high-risk handover.** Not by whoever built the thing under review — including the agent running this retro. One named lens and a 15-minute default timebox is enough; a scheduled full audit may use two lenses and 30 minutes. The reviewer needs no context from the build; that absence *is* the qualification.
 
 Give a fresh agent the harness and **one lens at a time**, rotating rather than running all of them. A fixed checklist calcifies into something that passes trivially.
 

@@ -76,13 +76,13 @@ Does the output name or get personalised to an individual? If so it stays in
 `runs/` and is never committed or shared in identifiable form.
 
 ## Human gate
-**Required, and never "none".** What a person must verify before this reaches
-anyone outside the team.
+**Required when this reaches someone outside the team, carries material
+judgement, or its surface names reviewer/owner approval.** Otherwise write
+`None — <reason>` rather than inventing a ceremonial review.
 
-The last step before that person looks is always `bash scripts/checkpoint.sh`.
-Where the host runs hooks it also fires on its own; where it doesn't, or the
-harness lives in a shared folder with no commit to hang a check on, this step
-is the checkpoint. A failing checkpoint means the work is not ready to hand over.
+The last step before handover is `bash scripts/checkpoint.sh`. A failing
+checkpoint means the work is not ready; it does not prevent the agent from
+ending a conversation or reporting a genuine blocker.
 
 ## Success metric
 How we know it worked. If this cannot be answered, the procedure may not be

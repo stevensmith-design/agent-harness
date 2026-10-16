@@ -49,8 +49,15 @@ Present the inventory and the proposed adapter. Get agreement before Phase 2.
 ## Phase 2 — Config
 
 Run `./scripts/harness-init.sh` (or `--yes` for non-interactive). Then verify by
-hand: `project.src`, `project.tests`, and every `surfaces[].paths` glob must
-actually match files in this repo. A glob that matches nothing is a gate that
+hand: `project.src`, `project.tests`, `project.product_paths`, every
+`surfaces[].paths` glob, and every
+retained `.agents/rules/*.md` `paths:` list must cover the files the rule was
+meant to govern. Root-level entrypoints such as `server.mjs` plus `public/` are
+source roots too. Product-owned design and delivery contracts belong in
+`project.product_paths`; harness rules, hooks and agent instructions do not.
+Do not accept a rule merely because one fallback glob happens
+to match a test file. A source area with no applicable rule is a named install
+failure, not a successful default. A glob that matches nothing is a gate that
 silently never runs — the most common way a harness looks installed and isn't.
 
 ## Phase 3 — Adapter
@@ -84,7 +91,7 @@ worse than none — they drift, and the agent picks whichever it read last.
 - `make install-hooks`, then confirm `git config core.hooksPath` says `.githooks`.
 - Add the PR template and the `gates` workflow. Set the toolchain step in
   `.github/workflows/gates.yml` to your stack's real setup action.
-- Pick the starting tier — `make tier-build` unless the team wants read-only first.
+- Confirm repository branch protection and the default branch before enabling the PR workflow.
 - Turn the two or three rules the team most cares about into `design.forbid`
   entries or new gate scripts. Prose nobody checks is the thing that rots.
 

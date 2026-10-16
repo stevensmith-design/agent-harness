@@ -48,9 +48,24 @@ project:
   description: <one line>
   src: src                  # handwritten source root
   tests: tests              # test root
+  # Paths owned by the product rather than by the harness. The finish reminder
+  # watches only these paths, and the protected-path gate uses the same list to
+  # distinguish an intentional harness-only change from a mixed change.
+  # Add project contracts that normal feature work owns; keep AGENTS.md,
+  # CLAUDE.md, hooks, gates and skills out of this list.
+  product_paths: ["src/**", "lib/**", "app/**", "public/**", "server/**", "server.mjs", "test/**", "tests/**", "design/**", "DESIGN.md", "tokens.json", "docs/ACCEPTANCE.md", "docs/ARCHITECTURE.md", "docs/PRD.md", "docs/FINDINGS.md", "licenses/**", "THIRD_PARTY_NOTICES.md"]
   generated:                # never hand-edited; globs
     - "**/*.g.*"
     - "**/generated/**"
+
+# Generic-adapter check status. Use exactly "none: <reason>" when a project
+# genuinely has no such capability. "unconfigured" remains NOT VERIFIED.
+# Stack adapters with real commands ignore these values.
+checks:
+  lint: unconfigured
+  format: unconfigured
+  typecheck: unconfigured
+  test: unconfigured
 
 surfaces:
   # A surface is a lane of work with its own risk level and its own rung.
@@ -86,6 +101,12 @@ policy:
   # "these lanes are described" and "every change is in a known lane".
   surfaces_exhaustive: false
 
+security:
+  # Project-local data that must never enter agent context. Inline JSON-style
+  # globs keep this readable by the dependency-free runtime hook.
+  # Example: ["burrow.db", "burrow.db-*", "tmp/customer-exports/**"]
+  sensitive_paths: []
+
 git:
   # Branching model. Trunk-based: short-lived branches off `main`, squash-merged
   # via PR, releases are tags. The rule is in .agents/rules/git-flow.md; this
@@ -107,7 +128,7 @@ git:
   # How many review-and-fix rounds a branch may take before a blocking finding
   # that is still open goes to a person. Read by scripts/review-rounds.sh.
   # 0 disables the cap.
-  max_review_rounds: 3
+  max_review_rounds: 2
   # Refuse to work directly on the main branch.
   protect_main: true
 
@@ -256,7 +277,9 @@ deploy:
 governance:
   # L3 module. Ignored unless harness.level is L3+.
   enabled: false
-  producer_cannot_self_certify: true
+  # Reviewers stay read-only; producers may repair and push their own PRs.
+  # Low-risk changes use deterministic checks and a producer checklist.
+  independent_review_for: [standard, high]
   human_approval_required_for: [auth, payments, data-deletion, release-config, routing]
 
 evals:

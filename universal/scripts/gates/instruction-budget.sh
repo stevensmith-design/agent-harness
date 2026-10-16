@@ -122,6 +122,7 @@ if [ "${1:-}" = "--size" ]; then
 fi
 
 rc=0
+AUTHORED_HERE=$(cfg harness.authored_here true)
 # The one input this gate cannot do without. Everything below measures the
 # always-loaded set; with no canonical file there is no set, and a total of 0
 # is under every budget.
@@ -134,14 +135,34 @@ check .agents/memory/MEMORY.md 200 "memory index" || rc=1
 # generated VIEW of AGENTS.md, not a pointer — Copilot reads it directly, so
 # routing it somewhere else would leave that tool with no rules at all.
 check_pointer CLAUDE.md || rc=1
-for f in "$HARNESS_ROOT"/.agents/rules/*.md; do
-  [ -f "$f" ] || continue
-  check ".agents/rules/$(basename "$f")" 60 "path rule" || rc=1
-done
-for f in "$HARNESS_ROOT"/.agents/skills/*/SKILL.md; do
-  [ -f "$f" ] || continue
-  check ".agents/skills/$(basename "$(dirname "$f")")/SKILL.md" 200 "skill" || rc=1
-done
+if [ "$AUTHORED_HERE" = true ]; then
+  for f in "$HARNESS_ROOT"/.agents/rules/*.md; do
+    [ -f "$f" ] || continue
+    check ".agents/rules/$(basename "$f")" 60 "path rule" || rc=1
+  done
+else
+  info "installed project: on-demand rule and skill lengths are advisory; the always-loaded set remains capped"
+fi
+# Locked capability skills are third-party inputs whose exact bytes are checked
+# by skills-integrity.sh. Applying the authored-skill line cap to them creates an
+# impossible instruction: trim the file, then fail because the pinned file was
+# trimmed. The budget remains mandatory for every skill authored in this repo.
+locked_skills=""
+if [ -f "$HARNESS_ROOT/skills-lock.json" ]; then
+  command -v python3 >/dev/null 2>&1 || fail "python3 is required to read skills-lock.json"
+  locked_skills=$(python3 -c "import json; d=json.load(open('$HARNESS_ROOT/skills-lock.json')); assert isinstance(d,dict); print(chr(10).join(d.get('skills',{})))") \
+    || fail "skills-lock.json will not parse — refusing to treat vendored skills as authored"
+fi
+if [ "$AUTHORED_HERE" = true ]; then
+  for f in "$HARNESS_ROOT"/.agents/skills/*/SKILL.md; do
+    [ -f "$f" ] || continue
+    skill=$(basename "$(dirname "$f")")
+    if [ -n "$locked_skills" ] && printf '%s\n' "$locked_skills" | grep -qxF -e "$skill" --; then
+      continue
+    fi
+    check ".agents/skills/$skill/SKILL.md" 200 "skill" || rc=1
+  done
+fi
 blind_spots
 if [ "$rc" -ne 0 ]; then
   warn ""

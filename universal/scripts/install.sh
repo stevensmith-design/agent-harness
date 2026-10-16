@@ -23,6 +23,10 @@ c_die()  { printf '\033[31m✗\033[0m %s\n' "$*" >&2; exit 1; }
 [ -d "$DEST" ] || c_die "no such directory: $DEST"
 DEST="$(cd "$DEST" && pwd)"
 [ "$DEST" != "$SRC" ] || c_die "refusing to install the harness into itself"
+git -C "$DEST" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+  || c_die "target is not a git repository: $DEST
+Initialise and commit the project first; the installer needs recoverable history
+before it adds governance files."
 
 # --- What ships ----------------------------------------------------------------
 #
@@ -38,7 +42,8 @@ DEST="$(cd "$DEST" && pwd)"
 # archive), the same local state is filtered by name. Regenerated views —
 # .claude/skills and .claude/rules, rebuilt by `make setup` — never ship.
 LIST=$(mktemp) || c_die "cannot create a temp file"
-trap 'rm -f "$LIST"' EXIT
+INSTALL_LIST="$LIST.install"
+trap 'rm -f "$LIST" "$INSTALL_LIST" "$INSTALL_LIST.next"' EXIT
 if git -C "$SRC" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   ( cd "$SRC" && git -c core.quotePath=false ls-files --cached --others --exclude-standard ) \
     | while IFS= read -r rel; do
@@ -69,12 +74,11 @@ awk '$0 == ".env.sample" || $0 ~ /\/\.env\.sample$/ { print; next }
 # only evidence was behavioural: their review skill started saying something
 # else.
 #
-# Two changes. Collisions are now enumerated PER FILE, so the message names what
-# is actually at risk. And --force no longer means "overwrite everything": it
-# covers only the files a repository legitimately shares a NAME with the harness
-# over, and it takes a backup of each. Anything else refuses with or without the
-# flag, because a flag that can destroy work you did not author is not a
-# confirmation, it is a trapdoor.
+# Two changes. Collisions are enumerated PER FILE, so the message names what is
+# actually at risk. Project-owned files are never overwritten: ordinary shared
+# names get a `.harness-candidate` beside the original for manual reconciliation,
+# while any deeper collision stops before writing. `--force` is accepted only
+# for backwards compatibility and cannot weaken either rule.
 if [ -f "$DEST/harness.config.yaml" ]; then
   c_warn "$DEST already contains a harness (harness.config.yaml)."
   c_warn "Installing over it in place is NOT implemented — there is no managed-file"
@@ -85,7 +89,8 @@ if [ -f "$DEST/harness.config.yaml" ]; then
 fi
 
 # Files a repository plausibly already has under a name the harness also uses.
-# These are genuinely the caller's to decide about, which is what --force is for.
+# These are genuinely the caller's to reconcile, so the harness copy is written
+# beside the original as a visible candidate and is never activated implicitly.
 MERGEABLE='^(README\.md|CLAUDE\.md|AGENTS\.md|Makefile|\.gitignore|\.gitattributes|\.prettierignore|\.env\.sample)$'
 
 mergeable=(); foreign=()
@@ -118,27 +123,31 @@ if [ "${#foreign[@]}" -gt 0 ]; then
   c_die "install stopped — nothing was written"
 fi
 
-if [ "${#mergeable[@]}" -gt 0 ] && [ "$FORCE" = 0 ]; then
-  c_warn "these already exist in $DEST and differ from the harness's copies:"
-  printf '    %s\n' "${mergeable[@]}" >&2
-  c_warn ""
-  c_warn "Your CLAUDE.md, Makefile or README are not the harness's to replace."
-  c_warn "Move or merge them first, then re-run. To overwrite anyway: --force"
-  c_warn "(--force keeps a <name>.pre-harness copy of each, so nothing is lost.)"
-  c_die "install stopped — nothing was written"
-fi
-
-# --force overwrites the mergeable set, but never without a copy. A confirmation
-# flag that leaves no way back is a flag people learn to fear rather than read.
+cp "$LIST" "$INSTALL_LIST"
+NEEDS_MERGE=0
 if [ "${#mergeable[@]}" -gt 0 ]; then
+  NEEDS_MERGE=1
+  c_warn "existing project files will be preserved byte-for-byte:"
+  # Preflight every candidate before writing any of them. A stale candidate for
+  # the last file must not leave new candidates for the earlier files behind.
   for m in "${mergeable[@]}"; do
-    cp -p "$DEST/$m" "$DEST/$m.pre-harness"
-    c_warn "backed up $m -> $m.pre-harness"
+    candidate="$m.harness-candidate"
+    [ ! -e "$DEST/$candidate" ] || c_die "merge candidate already exists: $candidate
+Review or remove that previous candidate before re-running; it will not be overwritten."
   done
+  for m in "${mergeable[@]}"; do
+    candidate="$m.harness-candidate"
+    mkdir -p "$DEST/$(dirname "$candidate")"
+    cp -p "$SRC/$m" "$DEST/$candidate"
+    c_warn "  kept $m; wrote $candidate for manual reconciliation"
+    awk -v skip="$m" '$0 != skip' "$INSTALL_LIST" > "$INSTALL_LIST.next" \
+      && mv "$INSTALL_LIST.next" "$INSTALL_LIST"
+  done
+  [ "$FORCE" = 0 ] || c_warn "--force is deprecated and does not overwrite project files"
 fi
 
 # tar, not cp: dotfiles included, no nesting surprise, and only the listed files.
-( cd "$SRC" && tar cf - -T "$LIST" ) | ( cd "$DEST" && tar xf - )
+( cd "$SRC" && tar cf - -T "$INSTALL_LIST" ) | ( cd "$DEST" && tar xf - )
 
 # Same normalisation the .skill package applies, and for the same reason: tar
 # preserves the SOURCE tree's modes, so a harness installed from a checkout with
@@ -160,7 +169,12 @@ while IFS= read -r rel; do
          chmod 0644 "$DEST/$rel" 2>/dev/null || true
        fi ;;
   esac
-done < "$LIST"
+done < "$INSTALL_LIST"
+# Bash 3 treats an empty array expansion as an unset variable under `set -u`.
+for m in ${mergeable[@]+"${mergeable[@]}"}; do
+  candidate="$DEST/$m.harness-candidate"
+  [ -f "$candidate" ] && chmod 0644 "$candidate" 2>/dev/null || true
+done
 
 # This repo is no longer the harness's own. The namespace rule applies to skills
 # the HARNESS authors; the target's skills are the target's. Without this flip,
@@ -193,6 +207,14 @@ if [ -n "$base" ] && [ "$base" != main ]; then
   else
     c_warn "default branch looks like '$base' — set git.main_branch in harness.config.yaml by hand"
   fi
+fi
+
+if [ "$NEEDS_MERGE" = 1 ]; then
+  c_warn "HARNESS FILES INSTALLED, BUT PROJECT FILES NEED MANUAL RECONCILIATION."
+  c_warn "Nothing that existed before this run was replaced. Review each"
+  c_warn "<name>.harness-candidate beside the original, merge only the parts"
+  c_warn "this project needs, delete the candidate, then run make setup."
+  exit 4
 fi
 
 c_ok "harness installed into $DEST"

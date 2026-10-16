@@ -11,6 +11,11 @@ Define a `cmd_<verb>` bash function for each verb your stack supports. A verb
 you do not define is skipped with a warning, not an error — so a partially
 filled adapter still runs end to end.
 
+For the generic adapter, a check that genuinely does not apply may be declared
+in `harness.config.yaml` as `none: <reason>` (quote the YAML value). This reports
+N/A and does not create NOT VERIFIED evidence. Leave it `unconfigured` until the
+real command or the reason for absence is known.
+
 | Verb | Must | Notes |
 |---|---|---|
 | `deps` | install dependencies | idempotent |

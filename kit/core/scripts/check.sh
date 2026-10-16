@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # check.sh — does this WORK comply with the harness?
 #
-# Runs each gate as a direct child and reads ITS exit status. Do not pipe a
+# Runs the cheap work-facing boundary plus any checks the installed harness
+# adds under scripts/work-checks/. Harness governance has its own command,
+# scripts/harness-check.sh, so ordinary work does not repeatedly audit the
+# machinery around it.
+#
+# Runs each check as a direct child and reads ITS exit status. Do not pipe a
 # gate through anything: `gate | tail` reports tail's status, and a check.sh
 # built that way printed "check passed" unconditionally — while being the first
 # checkbox on the PR template.
@@ -16,10 +21,7 @@ rm -f runs/.state/stubs 2>/dev/null
 status=0
 n_gates=0
 
-# check-budget lives outside gates/ because the retro and the docs address it
-# by name. It still has to RUN — the constitution's budget was enforced only
-# when someone remembered.
-for g in scripts/check-budget.sh scripts/gates/*.sh; do
+for g in scripts/gates/data-boundary.sh scripts/work-checks/*.sh; do
   [ -f "$g" ] || continue
   n_gates=$((n_gates + 1))
   printf '%s── %s%s\n' "$DIM" "$(basename "$g" .sh)" "$RST"
@@ -34,7 +36,7 @@ done
 
 printf '\n'
 if [ "$n_gates" -eq 0 ]; then
-  printf '%s✗ no gates ran. An empty check is not a passing check.%s\n' "$RED" "$RST" >&2
+  printf '%s✗ no work checks ran. An empty check is not a passing check.%s\n' "$RED" "$RST" >&2
   exit 1
 fi
 if [ $status -eq 0 ]; then

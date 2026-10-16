@@ -68,6 +68,8 @@ scripts/validate-skills.py
 scripts/scan-skill-trust.py
 scripts/verify-capabilities.py
 scripts/retro-evidence.sh
+scripts/harness-check.sh
+scripts/work-checks/README.md
 loading-order.md
 learning/reviews/README.md
 .pii-allow

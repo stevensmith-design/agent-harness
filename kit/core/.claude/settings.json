@@ -1,12 +1,27 @@
 {
   "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read", "Glob", "Grep", "Edit", "Write",
+      "Bash(bash scripts/checkpoint.sh)", "Bash(bash scripts/check.sh)", "Bash(bash scripts/harness-check.sh)",
+      "Bash(git status)", "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)",
+      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git checkout -b:*)", "Bash(git switch:*)", "Bash(git fetch:*)",
+      "Bash(git push:*)", "Bash(git pull --ff-only:*)", "Bash(git branch -d:*)", "Bash(git worktree:*)",
+      "Bash(gh pr create:*)", "Bash(gh pr view:*)", "Bash(gh pr checks:*)", "Bash(gh pr merge:*)"
+    ],
+    "ask": [
+      "Bash(npm install:*)", "Bash(npm i:*)", "Bash(npm add:*)", "Bash(npm update:*)",
+      "Bash(pnpm install:*)", "Bash(pnpm add:*)", "Bash(pnpm update:*)",
+      "Bash(yarn install:*)", "Bash(yarn add:*)", "Bash(yarn up:*)",
+      "Bash(bun install:*)", "Bash(bun add:*)", "Bash(pip install:*)", "Bash(pip3 install:*)"
+    ],
     "deny": [
       "Read(./.env)", "Read(./.env.local)", "Read(./.env.production)", "Read(./.env.development)", "Read(./.env.test)", "Read(./.env.staging)",
       "Read(./**/*credential*)", "Read(./**/*service-account*)",
       "Read(./**/*.pem)", "Read(./**/*.key)", "Read(./**/*.p12)", "Read(./**/*.pfx)",
       "Read(./.npmrc)", "Read(./.pypirc)", "Read(./.netrc)",
-      "Bash(sudo:*)", "Bash(curl:* | sh)", "Bash(npm install:*)", "Bash(npm i:*)",
-      "Bash(pnpm add:*)", "Bash(yarn add:*)", "Bash(pip install:*)", "Bash(pip3 install:*)"
+      "Bash(git push --force:*)", "Bash(git reset --hard:*)",
+      "Bash(sudo:*)", "Bash(curl:* | sh)"
     ]
   },
   "hooks": {
@@ -31,18 +46,6 @@
             "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/block-sensitive-runtime.sh\"",
             "timeout": 15,
             "statusMessage": "Checking the safety boundary..."
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/scripts/checkpoint.sh\" --hook",
-            "timeout": 120,
-            "statusMessage": "Running the harness checkpoint..."
           }
         ]
       }
