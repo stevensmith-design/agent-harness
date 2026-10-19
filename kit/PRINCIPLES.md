@@ -56,6 +56,7 @@ It deliberately restates nothing. Each row names the claim, the organ it tests, 
 | D11 | Harness edits require declared intent and cannot travel with content in one change | Self-protection | **The gate edited to go green** |
 | D12 | Protection is deny-by-default: content is enumerated, everything else is protected | Self-protection | **The unprotected new file** |
 | D13 | Every gate suite says what it cannot see, and names who looks there | Gates · Human gate | **The complete-looking green** — a pass that reads as "checked everything" when it checked what was written |
+| D14 | External services have a current-terms checkpoint at integration changes, while full audits are reserved for formal or high-risk work | Gates · Contracts | **The licensed SDK assumption** — technical access mistaken for permission to send, store, derive, or redistribute data |
 
 ## E. State
 

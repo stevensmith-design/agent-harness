@@ -28,11 +28,15 @@ branch. The checks read the project-specific policy from `harness.config.yaml`.
 - Run network Git commands (`fetch`, `pull`, `push`) and `gh` as separate, direct commands.
   Do not hide them in `cd` chains, loops, command substitutions, or `git -C`;
   Claude Code uses their exact command shape to apply the macOS sandbox exception.
+- Use the narrow forms admitted by `.claude/hooks/guard-git-network.sh`: fetch
+  with prune, fast-forward-only pull, and an explicit owned branch on push.
+  Never bypass hooks, pass an alternate upload/receive program, or use an admin
+  merge. If a branch is behind, use the host's update-branch operation rather
+  than rewriting published history.
 - Delete a merged branch and remove a clean worktree when you created and own
   them. Preserve unknown, shared, or dirty work and report the ambiguity once.
-- Never push directly to the default branch, force-push a shared branch,
-  rewrite shared history, or alter someone else's commits.
-- Rebase your own unmerged branch only when safe; never use destructive Git
-  commands without explicit operator direction.
+- Never push directly to the default branch, force-push, rewrite published
+  history, or alter someone else's commits. Never use destructive Git commands
+  without explicit operator direction.
 
 Enforced by `branch-hygiene.sh`, the Git hook, CI, and repository protection.

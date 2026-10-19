@@ -6,6 +6,12 @@ cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 input=""; [ -t 0 ] || input=$(cat)
 [ -n "$input" ] || exit 0
 
+blocked() {
+  printf '%s\n' "Blocked: $1" >&2
+  printf '%s\n' "If this looks wrong, stop after this attempt. Report what matched and why, then propose a safe fix; do not reword the command to evade the hook." >&2
+  exit 2
+}
+
 tool=$(printf '%s' "$input" | tr -d '\n' | sed -n -E 's/.*"tool_name"[[:space:]]*:[[:space:]]*"([^"\\]*)".*/\1/p')
 value=$(printf '%s' "$input" | tr -d '\n' \
   | sed -n -E 's/.*"(file_path|path|command)"[[:space:]]*:[[:space:]]*"(([^"\\]|\\.)*)".*/\2/p' \
@@ -16,7 +22,7 @@ value=$(printf '%s' "$input" | tr -d '\n' \
 probe=$(printf '%s\n' "$value" | sed -E 's/\.env\.(sample|example)/PUBLIC_ENV_SHAPE/g; s/[^/[:space:]"]+\.pub/PUBLIC_KEY/g')
 sensitive=0
 sensitive_reason=""
-BUILTIN_RE='(^|[^A-Za-z0-9_.-])(\.env($|\.|[^A-Za-z0-9_.-])|\.npmrc($|[^A-Za-z0-9_.-])|\.pypirc($|[^A-Za-z0-9_.-])|\.netrc($|[^A-Za-z0-9_.-])|[^/[:space:]]*(credential|service-account)[^/[:space:]]*|id_(rsa|dsa|ecdsa|ed25519)($|\.)|~?/?\.ssh(/|$)|~?/?\.aws(/|$)|~?/?\.config/gcloud(/|$))'
+BUILTIN_RE='(^|[^A-Za-z0-9_.-])(\.env($|\.|[^A-Za-z0-9_.-])|\.npmrc($|[^A-Za-z0-9_.-])|\.pypirc($|[^A-Za-z0-9_.-])|\.netrc($|[^A-Za-z0-9_.-])|[^/[:space:]]*(credential|service-account)[^/[:space:]]*\.(json|ya?ml|toml|ini|conf)($|[^A-Za-z0-9_.-])|id_(rsa|dsa|ecdsa|ed25519)($|\.)|~?/?\.ssh(/|$)|~?/?\.aws(/|$)|~?/?\.config/gcloud(/|$))'
 if printf '%s\n' "$probe" | grep -qiE "$BUILTIN_RE"; then
   sensitive=1; sensitive_reason="a built-in credential filename"
 fi
@@ -55,21 +61,20 @@ fi
 case "$tool" in
   Read|Grep|Glob)
     [ "$sensitive" -eq 0 ] || {
-      printf '%s\n' "Blocked: sensitive file contents may not enter agent context (${sensitive_reason:-sensitive path}). Read only a public sample/schema, or ask the operator to handle the real value." >&2
-      exit 2
+      blocked "sensitive file contents may not enter agent context (${sensitive_reason:-sensitive path}). Read only a public sample/schema, or ask the operator to handle the real value."
     } ;;
   Bash)
-    if printf '%s\n' "$value" | grep -qE '(^|[;&|[:space:]])(env|printenv|set|export[[:space:]]+-p)([;&|[:space:]]|$)'; then
-      printf '%s\n' "Blocked: dumping the process environment could expose credentials or personal data." >&2
-      exit 2
+    # Environment dumpers are dangerous when they are the command at the start
+    # of a shell segment. Matching them as arbitrary words also blocked harmless
+    # prose and quoted grep patterns such as `grep -E "env|token"`.
+    if printf '%s\n' "$value" | grep -qE '(^|[;&|][[:space:]]*)(env|printenv|set|export[[:space:]]+-p)([;&|[:space:]]|$)'; then
+      blocked "dumping the process environment could expose credentials or personal data."
     fi
     if printf '%s\n' "$value" | grep -qE '(^|[;&|[:space:]])(rg|grep|find)([;&|[:space:]]).*(--hidden|--no-ignore|-uuu)([;&|[:space:]]|$)'; then
-      printf '%s\n' "Blocked: bypassing ignore rules during a broad search can pull local sensitive files into output." >&2
-      exit 2
+      blocked "bypassing ignore rules during a broad search can pull local sensitive files into output."
     fi
     if [ "$sensitive" -eq 1 ] && [ "$safe_metadata" -ne 1 ]; then
-      printf '%s\n' "Blocked: shell command matched ${sensitive_reason:-a sensitive path}. Metadata-only git status/check-ignore/ls-files commands are allowed; content access is not." >&2
-      exit 2
+      blocked "shell command matched ${sensitive_reason:-a sensitive path}. Metadata-only git status/check-ignore/ls-files commands are allowed; content access is not."
     fi ;;
 esac
 exit 0

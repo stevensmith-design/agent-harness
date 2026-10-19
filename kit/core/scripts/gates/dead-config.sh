@@ -64,7 +64,7 @@ fi
 # missing file is a rule that silently never applies.
 
 n_refs=0
-MISS=$(mktemp 2>/dev/null) || MISS=""
+MISS=$(mktemp "${TMPDIR:-/tmp}/harness-kit.XXXXXX" 2>/dev/null) || MISS=""
 [ -n "$MISS" ] && [ -w "$MISS" ] || fail "cannot create a temp file — refusing to report a result"
 : > "$MISS"
 for f in $DOCS; do

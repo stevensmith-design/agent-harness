@@ -1,0 +1,555 @@
+{
+  "meta": {
+    "title": "外部サービス利用規約レビュー (描画デモ)",
+    "subtitle": "架空のアプリ「まちさんぽ」: LINE で相談すると近くのお店を AI が提案する",
+    "target": "machi-sanpo (main @ 1a2b3c4)",
+    "date": "2026-10-16",
+    "authors": "作成: Claude / 独立レビュー: codex",
+    "lead": "これは render.py の描画デモで、監査の完成例ではない。アプリ・店名・発話・ID・規約の版はすべて架空。実際の監査では、台帳にアプリが関わる外部サービスをすべて載せ、出典には実際の版と取得日を書く。"
+  },
+  "survey": {
+    "overview": [
+      "LINE 公式アカウント + LIFF の Web アプリ。Next.js を Cloud Run で動かし、DB は Cloud SQL (PostgreSQL)",
+      "トークの相談は Webhook で受け、Gemini で候補を選んで Flex メッセージで返す",
+      "店の詳細画面 (LIFF) で Google Places の写真・営業時間を都度取得して表示する"
+    ],
+    "components": [
+      {
+        "name": "Cloud Run: web",
+        "role": "LIFF 画面、API、LINE Webhook",
+        "where": "src/app/"
+      },
+      {
+        "name": "Cloud SQL",
+        "role": "利用者、メッセージ、店マスタ",
+        "where": "prisma/schema.prisma"
+      }
+    ],
+    "services": [
+      {
+        "name": "LINE Messaging API",
+        "apis": "Webhook、reply、push",
+        "calls": "src/line/webhook.ts:20",
+        "sends": "返信テキスト、Flex",
+        "receives": "トーク本文、userId",
+        "stores": "本文を messages に無期限",
+        "shows": "LINE トーク",
+        "auth": "チャネルシークレット (署名検証)",
+        "category": "メッセージング",
+        "basis": "コードで確認"
+      },
+      {
+        "name": "Vertex AI (Gemini)",
+        "apis": "generateContent",
+        "calls": "src/ai/suggest.ts:88",
+        "sends": "トーク本文、候補一覧",
+        "receives": "選定結果 JSON",
+        "stores": "rawOutput をログに",
+        "shows": "LINE の返信",
+        "auth": "サービスアカウント",
+        "category": "生成 AI",
+        "basis": "コードで確認"
+      },
+      {
+        "name": "Google Maps Platform",
+        "apis": "Places Details / Photos",
+        "calls": "src/places/detail.ts:31",
+        "sends": "place_id",
+        "receives": "写真、営業時間、URL",
+        "stores": "place_id のみ",
+        "shows": "LIFF の詳細画面",
+        "auth": "サーバーキー",
+        "category": "地図・位置情報",
+        "basis": "コードで確認"
+      },
+      {
+        "name": "Google Cloud (Cloud Run / Cloud SQL)",
+        "category": "ホスティング・クラウド",
+        "apis": "実行環境、DB",
+        "calls": "cloudbuild.yaml",
+        "sends": "全データ",
+        "receives": "-",
+        "stores": "DB 全体",
+        "shows": "-",
+        "auth": "サービスアカウント",
+        "basis": "コードで確認"
+      },
+      {
+        "name": "Sentry",
+        "category": "エラー監視",
+        "apis": "SDK",
+        "calls": "src/instrumentation.ts:5",
+        "sends": "例外とリクエスト情報",
+        "receives": "-",
+        "stores": "Sentry 側 (保持期間は未確認)",
+        "shows": "-",
+        "auth": "DSN",
+        "basis": "設定資料が必要"
+      }
+    ],
+    "storage": [
+      {
+        "where": "messages.text",
+        "what": "トーク本文",
+        "origin": "LINE",
+        "retention": "無期限",
+        "ref": "prisma/schema.prisma:40"
+      },
+      {
+        "where": "spots.place_id",
+        "what": "Google の place_id",
+        "origin": "Google",
+        "retention": "無期限 (規約上可)",
+        "ref": "prisma/schema.prisma:72"
+      }
+    ],
+    "flows_summary": [
+      {
+        "name": "トークで相談",
+        "path": "LINE -> Webhook -> DB 保存 -> Gemini -> reply"
+      },
+      {
+        "name": "店の詳細",
+        "path": "LIFF -> API -> Places Details -> 表示"
+      }
+    ],
+    "diagrams": [
+      {
+        "title": "構成図",
+        "kind": "ascii",
+        "body": " user (LINE app)\n   | (1) talk            (2) open LIFF\n   v                     v\n+---------------+   +----------------+\n| LINE Platform |   | LIFF (web app) |\n+-------+-------+   +--------+-------+\n        | (3) webhook        | (4) API\n        v                    v\n+------------------------------------+      +-----------------+\n| Cloud Run: web          (5) prompt +----->| Vertex AI       |\n|                    (6) place_id    +----->| Maps Platform   |\n+-----------------+------------------+      +-----------------+\n                  | (7) store\n                  v\n            +-----------+\n            | Cloud SQL |\n            +-----------+"
+      },
+      {
+        "title": "トーク相談のシーケンス",
+        "kind": "mermaid",
+        "body": "sequenceDiagram\n  participant U as User\n  participant L as LINE Platform\n  participant A as Cloud Run\n  participant G as Gemini\n  U->>L: message\n  L->>A: webhook\n  A->>A: save to messages\n  A->>G: prompt (text + candidates)\n  G-->>A: picks JSON\n  A->>L: reply (Flex)\n  L-->>U: carousel"
+      }
+    ],
+    "unverified": [
+      "Sentry の送信内容のスクラブ設定 (管理画面を見ていない)",
+      "LINE 公式アカウントのグループ参加設定"
+    ]
+  },
+  "services": [
+    {
+      "key": "line",
+      "name": "LINE (Messaging API / LIFF)",
+      "sub": "LINE 開発者契約、ユーザーデータポリシー、公式アカウント利用規約、開発ガイドライン",
+      "prefix": "L"
+    },
+    {
+      "key": "maps",
+      "name": "Google Maps Platform",
+      "sub": "Places API (New) Details / Photos",
+      "prefix": "G"
+    },
+    {
+      "key": "vertex",
+      "name": "Vertex AI (Gemini)",
+      "sub": "generateContent",
+      "prefix": "V"
+    }
+  ],
+  "owners": [
+    "LINE",
+    "Google"
+  ],
+  "actors": {
+    "platform": {
+      "label": "LINE",
+      "desc": "LINE 側 (LINE Platform / LIFF の画面)",
+      "color": "#06c755"
+    },
+    "vendor": {
+      "label": "Google",
+      "desc": "Google のマネージドサービス (Vertex AI / Maps Platform)",
+      "color": "#c5221f"
+    }
+  },
+  "findings": [
+    {
+      "id": "L-01",
+      "service": "line",
+      "owner": "LINE",
+      "sev": "V",
+      "title": "トーク本文を外部の生成 AI (Gemini) に送っている",
+      "clause": "LINE ユーザーデータポリシー 1.2 (公式アカウントが受領したメッセージは LINE ユーザ情報)、3.4 (第三者開示の禁止。例外は法令と業務委託)",
+      "fact": "src/ai/suggest.ts:88 で発話全文をプロンプトに入れる。userId は送らない。業務委託としての契約・整理は無く、プライバシーポリシーにも記載が無い (確認済み)",
+      "action": "LINE 経由の本文を外に出さない設計にする。(1) 自己ホストのモデルに置き換える (2) 自由文の相談は LIFF の入力画面に寄せる。推奨は (1)",
+      "basis": "規約",
+      "refs": [
+        "S-LINE-UDP"
+      ],
+      "related": [
+        "V-01"
+      ]
+    },
+    {
+      "id": "L-02",
+      "service": "line",
+      "owner": "LINE",
+      "sev": "V",
+      "title": "トーク本文を無期限に保存し、利用者に明示していない",
+      "clause": "LINE ユーザーデータポリシー 3.2.3 (ユーザー ID 以外を 24 時間以上保存するなら明示)",
+      "fact": "prisma/schema.prisma:40 messages.text。削除ジョブなし。プライバシーポリシーに記載なし",
+      "action": "保持期間を決めて日次で削除し、プライバシーポリシーに明示する",
+      "refs": [
+        "S-LINE-UDP"
+      ]
+    },
+    {
+      "id": "L-03",
+      "service": "line",
+      "owner": "LINE",
+      "sev": "J",
+      "title": "候補ゼロのとき入力全文を引用して返す",
+      "clause": "公式アカウント利用規約 18 条 (不快・迷惑な内容の配信)。自動応答も配信コンテンツ",
+      "fact": "src/line/reply.ts:55 「『{入力}』に合うお店は見つかりませんでした」",
+      "action": "入力を引用しない定型文にする"
+    },
+    {
+      "id": "L-04",
+      "service": "line",
+      "owner": "LINE",
+      "sev": "OK",
+      "title": "Webhook の署名検証",
+      "clause": "Messaging API 開発ガイドライン (署名の検証)",
+      "fact": "src/line/webhook.ts:20",
+      "action": "現状維持"
+    },
+    {
+      "id": "G-01",
+      "service": "maps",
+      "owner": "Google",
+      "sev": "V",
+      "title": "Google が返したサイト URL を差し替えて Google 欄に表示",
+      "clause": "Google Maps Platform Terms 3.2.3(g) (検索結果の改変禁止)",
+      "fact": "src/places/detail.ts:64 で独自の URL に置換し、Google ロゴ付きの欄に出す",
+      "action": "差し替え先の URL は Google 欄の外に出す",
+      "refs": [
+        "S-MAPS-TOS"
+      ]
+    },
+    {
+      "id": "G-02",
+      "service": "maps",
+      "owner": "Google",
+      "sev": "J",
+      "title": "Google の座標から計算した最寄り駅を LINE の Flex に載せる",
+      "clause": "Terms 3.2.3(c) (Google Maps Content を基にコンテンツを作らない。例: Places の緯度経度を point-in-polygon 分析の入力に使う)",
+      "fact": "src/stations/nearest.ts:12 で座標から最寄り駅を計算し、Flex の pin 行に出す。送信した Flex は user_events.payload に残る",
+      "action": "駅名は提供元の値をそのまま使い、距離の計算は Google 以外でジオコーディングした座標で行う",
+      "refs": [
+        "S-MAPS-TOS"
+      ]
+    },
+    {
+      "id": "G-03",
+      "service": "maps",
+      "owner": "Google",
+      "sev": "OK",
+      "title": "保存しているのは place_id だけ",
+      "clause": "Service Specific Terms (Google ID Caching)",
+      "fact": "prisma/schema.prisma:72",
+      "action": "現状維持"
+    },
+    {
+      "id": "V-01",
+      "service": "vertex",
+      "owner": "Google",
+      "sev": "U",
+      "title": "18 歳未満の利用可否",
+      "clause": "Google Cloud Service Specific Terms の生成 AI 章 (18 歳未満が使う見込みのあるサービスでの利用禁止)",
+      "fact": "利用規約に年齢条件の記載なし。募集条件は未確認",
+      "action": "参加条件を確認し、必要なら年齢確認を入れる (K-01)"
+    }
+  ],
+  "flows_intro": "1 本の会話を実際に通して、どこでどのデータが動き、どの項目が関わるかを並べたもの。チップは判定と項目番号 ([違反] = 違反の疑い)。",
+  "flows": [
+    {
+      "key": "A",
+      "title": "例 A: LINE トークで相談する",
+      "sub": "LINE 側の論点が集中する経路",
+      "steps": [
+        {
+          "actor": "platform",
+          "title": "利用者が公式アカウントに送る",
+          "data": [
+            "下北沢で静かなカフェ"
+          ],
+          "items": []
+        },
+        {
+          "actor": "platform",
+          "title": "Webhook: LINE Platform から Cloud Run へ",
+          "data": [
+            "{\"events\":[{\"type\":\"message\",\"source\":{\"userId\":\"U0000...\"},",
+            "  \"message\":{\"type\":\"text\",\"text\":\"下北沢で静かなカフェ\"}}]}"
+          ],
+          "items": [
+            [
+              "署名検証あり",
+              [
+                "L-04"
+              ]
+            ]
+          ]
+        },
+        {
+          "actor": "app",
+          "title": "保存: Cloud SQL",
+          "data": [
+            "messages.text  <- 「下北沢で静かなカフェ」"
+          ],
+          "items": [
+            [
+              "本文を無期限に保存",
+              [
+                "L-02"
+              ]
+            ]
+          ]
+        },
+        {
+          "actor": "vendor",
+          "title": "Gemini: 候補の選定",
+          "data": [
+            "候補リスト:",
+            "[1] 名称=喫茶ほしぞら 場所={{下北沢}}  <- Google 座標から計算",
+            "ユーザーからのメッセージ: {{下北沢で静かなカフェ}}"
+          ],
+          "items": [
+            [
+              "LINE で受け取った本文を Google に送る",
+              [
+                "L-01"
+              ]
+            ],
+            [
+              "年齢条件が未確認",
+              [
+                "V-01"
+              ]
+            ]
+          ]
+        },
+        {
+          "actor": "platform",
+          "title": "返信: Flex カルーセル",
+          "data": [
+            "喫茶ほしぞら / (pin) {{下北沢}} / 理由「静かに過ごせる喫茶店です」"
+          ],
+          "items": [
+            [
+              "Google 座標由来の駅名が LINE に出る",
+              [
+                "G-02"
+              ]
+            ],
+            [
+              "候補ゼロのとき入力を引用",
+              [
+                "L-03"
+              ]
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "key": "B",
+      "title": "例 B: LIFF で店の詳細を開く",
+      "sub": "Google Maps Platform が関わる画面",
+      "steps": [
+        {
+          "actor": "app",
+          "title": "Cloud SQL から place_id を読む",
+          "data": [
+            "spots.place_id = ChIJ...."
+          ],
+          "items": [
+            [
+              "保存は place_id だけ",
+              [
+                "G-03"
+              ]
+            ]
+          ]
+        },
+        {
+          "actor": "vendor",
+          "title": "Places Details (都度取得)",
+          "data": [
+            "FieldMask: photos, regularOpeningHours, websiteUri"
+          ],
+          "items": []
+        },
+        {
+          "actor": "platform",
+          "title": "LIFF の詳細画面",
+          "data": [
+            "Google 欄: 写真 / 営業時間 / サイト {{https://example.com/shop}}  <- 差し替え後"
+          ],
+          "items": [
+            [
+              "サイト URL を差し替えて Google 欄に出す",
+              [
+                "G-01"
+              ]
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "code": "A",
+      "title": "利用規約・プライバシーポリシーの変更で済む",
+      "effort": "工数小",
+      "policy": [
+        "プライバシーポリシーに保存項目と期間を書く"
+      ],
+      "ids": []
+    },
+    {
+      "code": "B",
+      "title": "年齢などの利用条件のチェック",
+      "effort": "工数小",
+      "policy": [
+        "参加条件を確認し、必要なら年齢確認を入れる"
+      ],
+      "ids": [
+        "V-01"
+      ]
+    },
+    {
+      "code": "C",
+      "title": "レスポンスの仕方を変えれば済む (ロジック変更)",
+      "effort": "工数中",
+      "policy": [
+        {
+          "text": "先にやる:",
+          "children": [
+            "G-01 差し替え URL を Google 欄の外に出す",
+            "L-03 入力を引用しない定型文にする"
+          ]
+        }
+      ],
+      "ids": [
+        "G-01",
+        "L-03"
+      ]
+    },
+    {
+      "code": "D",
+      "title": "機能を実装すれば済む",
+      "effort": "工数中",
+      "policy": [
+        "保持期間の削除ジョブを入れ、プライバシーポリシーに明示する"
+      ],
+      "ids": [
+        "L-02"
+      ]
+    },
+    {
+      "code": "E",
+      "title": "システムの設計から見直す",
+      "effort": "工数大",
+      "policy": [
+        {
+          "text": "[1] L-01: LINE 経由の本文を外部の生成 AI に送らない",
+          "children": [
+            "(1-1) 自己ホストのモデルに置き換える",
+            "(1-2) 自由文の相談は LIFF の入力画面に寄せる",
+            "推奨: (1-1)"
+          ]
+        },
+        {
+          "text": "[2] G-02: 判断に使う座標を Google 以外にする",
+          "children": [
+            "(2-1) 駅名は提供元の値をそのまま出す",
+            "(2-2) 距離の計算は Google 以外でジオコーディングした座標で行う"
+          ]
+        }
+      ],
+      "ids": [
+        "L-01",
+        "G-02"
+      ]
+    },
+    {
+      "code": "F",
+      "title": "その他 (契約・設定・相手先の確認待ち)",
+      "effort": "確認待ち",
+      "policy": [
+        "7 章の確認事項を相手先に聞く"
+      ],
+      "ids": []
+    }
+  ],
+  "checks": [
+    {
+      "id": "K-01",
+      "question": "参加者の年齢条件 (18 歳以上に限定できるか)",
+      "related": [
+        "V-01"
+      ]
+    }
+  ],
+  "cross_review": {
+    "reviewer": "codex (web 検索あり)",
+    "file": "cross-review.md",
+    "rows": [
+      {
+        "theirs": "01",
+        "mine": "L-01",
+        "agree": "同",
+        "note": ""
+      },
+      {
+        "theirs": "02",
+        "mine": "G-02",
+        "agree": "強",
+        "note": "Flex が送信ログに残る経路を指摘。確認して G-02 の実装欄に追記した"
+      },
+      {
+        "theirs": "03",
+        "mine": "L-03",
+        "agree": "新",
+        "note": "取り込んだ"
+      }
+    ],
+    "missing": [
+      "G-03"
+    ]
+  },
+  "sources": [
+    {
+      "id": "S-MAPS-TOS",
+      "name": "Google Maps Platform Terms of Service",
+      "url": "https://cloud.google.com/maps-platform/terms",
+      "version": "(例) Last modified YYYY-MM-DD",
+      "fetched": "(例) YYYY-MM-DD"
+    },
+    {
+      "id": "S-LINE-UDP",
+      "name": "LINE ユーザーデータポリシー",
+      "url": "https://terms2.line.me/LINE_Developers_user_data_policy?lang=ja",
+      "version": "(例) YYYY-MM-DD 版",
+      "fetched": "(例) YYYY-MM-DD"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "terms/line.md",
+      "label": "LINE の規約 (原文引用)"
+    }
+  ],
+  "questions": [
+    {
+      "q": "Google Maps API のレスポンスを DB にもキャッシュにも保存していないか",
+      "a": "保存しているのは place_id だけ (G-03)。ただし座標から計算した最寄り駅が LINE に出ている (G-02)。"
+    }
+  ]
+}

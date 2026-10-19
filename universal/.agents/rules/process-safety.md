@@ -1,0 +1,16 @@
+---
+name: process-safety
+description: Start and stop development processes without terminating unrelated applications or another agent's work.
+trigger: always
+---
+
+# Process ownership
+
+Prevents: a broad `pkill` used to free a port terminating the user's browser,
+editor, database, or another agent's development server.
+
+- Record the PID of every long-running process you start.
+- Stop only that PID, after confirming it is still the process you started.
+- Never use `pkill`, `killall`, a name-wide match, or a port-wide sweep. If an
+  unknown process owns a needed port, report its PID and ask before touching it.
+- A process started by another agent, checkout, or user is not yours to stop.

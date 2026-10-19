@@ -50,6 +50,10 @@ Report before changing anything:
 - Which foundations already exist, and where.
 - Residue from a different harness.
 - **Whether a judged corpus exists**, and how large.
+- External services, data providers, platforms, stores, and third-party data
+  flows already in scope. Record where applicable terms, contract/plan/region,
+  retention, onward transfer, attribution, consent/deletion, age, and prohibited
+  uses are owned; unknown private contract or console facts stay unknown.
 
 Present it. Get agreement before Phase 2.
 
@@ -103,6 +107,12 @@ Then merge the client's existing rules, routing each to its owner:
 
 Then supersede the originals in place with a pointer. **Two copies of one rule is worse than none** — they drift and the agent obeys whichever it read last.
 
+If the architecture includes external-service integrations, route a concise
+current-terms checkpoint to the relevant surface or procedure. Do not create an
+always-on whole-project audit. Add a formal audit/report procedure only when the
+failure cost warrants it—for example an incident, regulated or client-facing
+delivery, material launch, or portfolio-wide review.
+
 **Gate:** `./scripts/check-budget.sh` passes.
 
 ## Phase 5 — Pack
@@ -129,14 +139,31 @@ prints a shell recipe for the person to execute. Size branches by one coherent
 reviewable outcome: combine inseparable changes, split independently shippable
 or differently risky work.
 
+Make the lifecycle one procedure, not seven reminders: confirm the PR base and
+required checks, merge without bypass flags, query until the PR is actually
+`MERGED`, then remove only the clean branch/worktree that procedure created.
+Pair any unsandboxed network-Git permission with a command-shape guard and a
+ref-aware pre-push hook. A deny-list of spellings is not enough: abbreviated
+hook-bypass flags, alternate upload/receive programs, refspecs, and admin merge
+flags have all bypassed apparently safe broad patterns.
+
 If Claude Code sandboxing is enabled on macOS with SSH remotes, exclude direct
-`git fetch *`, `git pull *`, and `git push *` calls from the sandbox and pair
-them with narrow allow rules. Keep them as separate commands: `cd` chains,
+only the exact direct fetch/pull/push shapes needed by the workflow from the
+sandbox and pair them with equally narrow allow rules. Keep them as separate commands: `cd` chains,
 loops, substitutions, `git -C`, scripts, and `make` targets do not match those
 exclusions. Keep `gh` sandboxed where HTTPS works; allow only the required PR
 subcommands and include both `github.com` and `*.github.com` in the network
 allowlist. Excluded commands have full user credential and host access, so do
-not broaden this to arbitrary shell or `gh *` without a real need.
+not broaden this to arbitrary shell or `gh *`.
+
+If the harness starts long-running processes, record their PIDs and stop only
+those PIDs after confirming ownership. Never encode `pkill`, `killall`, a
+name-wide match, or a port-wide sweep as routine cleanup.
+
+After installation, open one real PR and confirm that CI actually starts and
+reports the intended required checks. Record that activation once; account or
+repository settings cannot be proven by generated workflow files, and checking
+them again on every PR would turn readiness into recurring ceremony.
 
 **Connections.** If the harness reads anything outside its own folder, copy `platforms/templates/connections.md` to `config/connections.md` and fill it in. Copy `mcp.json.example` or `env.example` only where a connection needs it — and never an `.env` into a shared drive.
 
@@ -162,10 +189,14 @@ Then print the summary:
 - Rules migrated: old path → new owner, for each
 - Gates enforcing, and **gates deliberately deferred with the reason**
 - **Which checkpoints are active** — commit and procedure step — and which were only recommended
+- Whether one real PR proved CI activation, or why that one-time check remains open
 - What ran through it, and what happened
 - **The improvement loop:** who runs the retro, whether the session-start reminder will reach them (it needs a host that runs hooks — otherwise name a calendar reminder), and whether transcript mining is available here
 - **What still needs a human, named explicitly**
 
 ## Failure handling
 
-Stop and report. Never silently fall back, never disable a gate to finish, never leave the target half-migrated. If you must stop mid-phase, say exactly which phase and what state things are in.
+Stop after one failed attempt and diagnose the boundary. Report the exact gate,
+hook, sandbox, permission, or host-classifier block; its likely cause; the state
+left behind; and safe options for proceeding. Never loop, silently reword a
+command, weaken the check, or hand the person commands to bypass it.

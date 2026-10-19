@@ -1,7 +1,7 @@
 ---
 name: protected-harness
 description: The agent may not modify its own constraints during product work.
-paths: ["AGENTS.md", ".agents/**", ".github/workflows/**", "docs/decisions/**", "harness.config.yaml"]
+paths: ["AGENTS.md", ".agents/**", ".claude/**", ".githooks/**", ".github/workflows/**", "docs/decisions/**", "harness.config.yaml"]
 trigger: glob
 ---
 

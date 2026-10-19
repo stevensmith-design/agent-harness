@@ -30,11 +30,12 @@ reviewable outcome; independently shippable or differently risky work separates.
 
 If the harness enables Claude Code's shell sandbox and the repository uses an
 SSH remote, direct `git fetch`, `git pull`, and `git push` need narrow
-`sandbox.excludedCommands` entries and matching permission allows. The macOS
+`sandbox.excludedCommands` entries, matching permission allows, a command-shape
+guard, and a ref-aware pre-push hook. The macOS
 sandbox cannot complete Git-over-SSH authentication even when the host is on
 the network allowlist. If `gh` cannot read its normal macOS credentials or TLS
-store inside the sandbox, add an exact `gh *` exclusion too, while permitting
-only the required `gh` subcommands. Excluded commands have the user's full
+store inside the sandbox, exclude only the exact required `gh pr` subcommands,
+not `gh *`, while permitting only those same subcommands. Excluded commands have the user's full
 filesystem, credential, and network access; permission allow/deny rules still
 apply.
 
@@ -48,6 +49,11 @@ does not cover the apex domain.
 On macOS, shell scripts must pass `mktemp` an explicit template below
 `${TMPDIR:-/tmp}`. A bare call can choose a system temp root outside the agent
 sandbox even when the host provides a writable temporary directory.
+
+Only terminate a long-running process by a PID the agent recorded when it
+started that process. Never generate `pkill`, `killall`, name-wide, or port-wide
+cleanup rules: they terminate unrelated editors, browsers, databases, or another
+agent's server. An unknown owner is a reason to report the PID, not to kill it.
 
 Writes under `.claude/` and `.git/` are host-protected. Claude Code may still
 ask for a yes/no approval or route them through its auto-mode classifier even

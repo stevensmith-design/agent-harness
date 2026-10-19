@@ -64,6 +64,24 @@ CLI, or skill is added or updated. It inspects identity, licence, archive,
 permissions and lifecycle hooks without executing the candidate. The agent-loop
 hook blocks undeclared installs and permanently blocks global/download-to-shell forms.
 
+**External-service terms checkpoint** — when a change adds or changes an API,
+SDK, data provider, platform integration, app store path, or the data crossing
+one of those boundaries, inspect the currently applicable official terms before
+implementation. Record which contracting entity, plan, region, API generation,
+and effective version apply; what data enters, leaves, persists, appears in logs,
+or becomes a derived value; and any onward-transfer, attribution, consent,
+deletion, age, or prohibited-use condition. A missing contract, console setting,
+or non-public policy is an explicit unknown, never a pass.
+
+This is a scoped design checkpoint, not a new gate on every PR. For incident
+response, a client or legal report, a material launch, or a whole-application
+review, apply the optional `external-terms-audit` overlay and invoke
+`/harness-external-terms-audit`. It inventories every external service, ties
+facts to `file:line`, captures official source URL/version/date, separates
+suspected conflicts from judgement and missing evidence, and can render a
+Markdown or HTML report. Focused reviews self-verify; formal or consequential
+findings receive an independent cross-check.
+
 ## What this harness does not do
 
 Named honestly, because a gap you know about is manageable and a gap you assume
