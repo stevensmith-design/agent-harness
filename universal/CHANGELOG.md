@@ -8,6 +8,14 @@ existing one — so each entry says what an installed repo has to do.
 
 ### Additive installation and combined-harness compatibility
 
+- `harness-init.sh --dry-run` is read-only. It used to guard only the config
+  writes, so it still rewrote `AGENTS.md`, deleted rule copies and ran both
+  generators; it now validates, prints the planned values and rule removals,
+  and stops. Every answer is also an argument (`--adapter`, `--name`,
+  `--stack`, `--src`, `--tests`, `--ui`, `--datastore`, `--level`), validated
+  before any write, so an agent no longer needs a terminal. Without a terminal,
+  an unanswered value fails — `--yes` accepts detected defaults but never the
+  `<stack>` placeholder. `make harness-init ARGS='…'` passes them through.
 - `install.sh` now requires a Git target and never overwrites an existing
   project file. Shared-name collisions are preserved byte-for-byte and receive
   a `.harness-candidate` beside them for manual reconciliation; the old
