@@ -45,10 +45,11 @@ existing one — so each entry says what an installed repo has to do.
   pushes, PR operations, merging and clean owned-worktree cleanup are available;
   destructive history rewriting remains denied and release/deploy stays an
   explicit approval boundary.
-- On macOS, direct Git fetch, fast-forward pull, and push operations now use the
-  documented unsandboxed exception so SSH remotes work without repeated retry
-  prompts. Fetch is explicitly allowed, GitHub's apex HTTPS domain is included,
-  and agent guidance keeps network operations in separately matchable commands.
+- On macOS, only explicit fetch-with-prune, fast-forward pull, owned-branch
+  push, and required `gh pr` shapes leave the sandbox. A command-shape guard
+  blocks alternate upload/receive programs, hook bypasses, refspecs, shell
+  composition and admin merges; a ref-aware pre-push hook separately blocks
+  default-branch, tag and history-rewrite pushes.
 - `project.product_paths` is now the shared adaptation point for finish-time
   evidence reminders and mixed harness/product change detection. Project-owned
   design contracts and root server files no longer require a harness override.
@@ -58,11 +59,20 @@ existing one — so each entry says what an installed repo has to do.
 - Review is now risk-based and capped at two rounds. Low-risk changes use
   deterministic checks and a producer checklist; standard/high-risk changes get
   one read-only reviewer. The producer remains free to repair and push its own PR.
+- The PR procedure now follows owned work through confirmed `MERGED` state and
+  clean branch/worktree removal, without imposing an independent reviewer on
+  low-risk changes. Any gate, hook, sandbox, permission, or host-classifier
+  block is diagnosed once and reported with safe options instead of retried or
+  silently reworded.
+- Development processes are stopped only by a PID recorded when the agent
+  started them; broad name- and port-based killing is forbidden.
 - `make check` now runs product checks only. `make harness-check` owns governance,
   generated-file drift and harness integrity, and generated GitHub CI runs it
   only when harness paths change.
 - The generic adapter accepts an explicit `none: <reason>` for checks a project
   genuinely does not have, instead of leaving CI permanently NOT VERIFIED.
+- Conventional `test/`, `tests/`, `__tests__/`, and `spec/` changes now resolve
+  to a low-risk test surface instead of being reported as unexamined policy input.
 - Self-test fixtures copy only version-controlled harness inputs, never the
   adopter's whole working tree. Skill linking preserves and reports collisions
   rather than deleting project-owned directories.
@@ -76,6 +86,12 @@ existing one — so each entry says what an installed repo has to do.
 
 ### Capability, dependency and data safety
 
+- External API, SDK, data-provider, platform, and store changes now carry a
+  concise current-terms checkpoint before implementation. The optional
+  `external-terms-audit` overlay adds the supplied read-only whole-application
+  audit and Markdown/HTML report workflow without adding another ordinary-PR
+  gate; focused checks self-verify while formal or consequential audits receive
+  an independent cross-check.
 - Capability skills now pass strict portable-frontmatter and agent-trust gates.
   `skills-add` scans a quarantined copy before it enters discovery, and exact-line
   reviewed exceptions fail when stale. Bundled skills no longer pretend they
@@ -86,6 +102,10 @@ existing one — so each entry says what an installed repo has to do.
 - Claude runtime hooks block sensitive-file access, environment dumps, broad
   ignore-bypassing searches, undeclared package installation, global installs,
   and download-to-shell forms before their output reaches the model.
+- Sensitive-access matching no longer treats ordinary prose containing
+  `credential`, or a quoted search alternation containing `env`, as a secret
+  access attempt; credential-shaped config filenames and real environment-dump
+  commands remain blocked and have regression cases.
 - New data-boundary gate rejects tracked secret-bearing filenames,
   personal/private paths, and structured personal-data shapes without printing
   matched values. `.pii-allow` exceptions are path-scoped and fail when stale.

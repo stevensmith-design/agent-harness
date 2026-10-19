@@ -10,7 +10,7 @@ Ranked by what would hurt first.
 
 Moved here from the README, which describes what the kit does. This section records how far that has been verified.
 
-**v0.15.0 — built, self-verified, adversarially reviewed, not yet installed on a real engagement.**
+**v0.16.0 — built and self-verified, not yet installed on a real engagement. Earlier versions were adversarially reviewed; the v0.16 external-service addition has not yet had its independent review.**
 
 | | |
 |---|---|

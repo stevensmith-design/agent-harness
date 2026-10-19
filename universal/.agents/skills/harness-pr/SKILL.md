@@ -16,19 +16,21 @@ carries is evidence, not a summary of what you did.
 |---|---|
 | Work is done and gates are green | Gates are red — fix those first, they are cheaper than a reviewer |
 | A reviewer left findings to address | Reviewing someone else's PR — that is `review` |
-| A PR went stale and needs a rebase | You want to merge your own PR unreviewed — never |
+| A PR went stale and needs its base updated | You want to bypass the configured review policy |
 
-**Owns:** the PR body, pushing the branch, responding to findings.
-**Never:** approves the PR, merges without an independent review, or edits the
-reviewer's comments.
+**Owns:** the PR body, pushing the branch, responding to findings, and the
+owned-work lifecycle through verified merge and cleanup. **Never:** approves
+its own PR, bypasses the configured risk-based review, or edits the reviewer's
+comments. Low-risk work uses the producer checklist; it does not invent an
+independent-review requirement that the configured policy does not have.
 
 ## Opening it
 
 1. **Gates first.** `make check`, and `make verify` for anything user-visible.
    Opening a red PR spends a reviewer's attention on something a script would
    have caught in thirty seconds.
-2. `git push -u origin <branch>` — the `build` tier denies push, so this needs
-   push it directly. Never push the default branch or work owned by someone else.
+2. `git push -u origin <branch>` directly. The network-command guard admits
+   only an explicit non-default branch. Never push work owned by someone else.
 3. Open it against `main`, filling **every** section of
    `.github/pull_request_template.md`. Do not delete sections; CI fails on
    missing ones, and the empty-verification check fails on a section that only
@@ -81,16 +83,24 @@ conversation, not a quiet edit inside a feature PR.
 
 ## Keeping it mergeable
 
-- Conflicts: rebase onto `main`, force-push **with lease** to your own unmerged
-  branch. Do not repeatedly merge `main` in — it weaves the history into
-  something no one can review.
+- Behind base: use `gh pr update-branch <number> --rebase` when the repository
+  supports it, then wait for the new checks. Do not locally rewrite a published
+  branch or force-push it.
 - A PR growing past a few hundred lines of real change should be split. Say so.
 - Stale for days: rebase, re-run gates, and ping. A PR nobody has looked at is
   the producer's problem to solve.
 
-## Merging
+## Merging and cleanup
 
-Squash into `main`, delete the branch. Required first: gates green, an
-independent review passed by someone who is not the producer, and — for a
-surface listed in `governance.human_approval_required_for` — a named human
-approval. You do not merge your own PR on your own say-so.
+1. Read draft state, base, mergeability, review decision, and required checks.
+   Low risk needs the producer checklist; standard risk needs its one read-only
+   reviewer; configured high-risk surfaces also need named human approval.
+2. If behind, update the branch and wait for the replacement check run. Never
+   use `--admin`, bypass a queue, or treat a still-pending check as green.
+3. Merge with the repository's configured method and request branch deletion.
+   Then query the PR again: command success is not evidence unless state is
+   actually `MERGED`.
+4. Only after that confirmation, delete the local branch and remove a worktree
+   if this run created it and it is clean. Preserve shared, unknown, or dirty
+   branches/worktrees and report the ambiguity once. The agent performs these
+   routine commands; it does not print a shell recipe for the person to run.

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Validate the refs Git is about to update. Permission rules inspect command
+# text; this hook sees the actual destination refs and remote tips.
+set -e
+ROOT=$(git rev-parse --show-toplevel)
+MAIN=$(sed -n 's/^[[:space:]]*main_branch:[[:space:]]*//p' "$ROOT/harness.config.yaml" | head -1 | tr -d '"' | sed 's/[[:space:]]*#.*$//')
+[ -n "$MAIN" ] || MAIN=main
+ZERO=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "$remote_ref" ] || continue
+  if [ "$remote_ref" = "refs/heads/$MAIN" ]; then
+    echo "pre-push: direct updates to '$MAIN' are forbidden; merge a PR" >&2
+    exit 1
+  fi
+  case "$remote_ref" in
+    refs/heads/*) ;;
+    *) echo "pre-push: only owned branches may be pushed by the routine workflow ($remote_ref)" >&2; exit 1 ;;
+  esac
+  [ "$local_sha" = "$ZERO" ] && continue
+  if [ "$remote_sha" != "$ZERO" ] && ! git merge-base --is-ancestor "$remote_sha" "$local_sha"; then
+    echo "pre-push: refusing a non-fast-forward update to $remote_ref" >&2
+    exit 1
+  fi
+done

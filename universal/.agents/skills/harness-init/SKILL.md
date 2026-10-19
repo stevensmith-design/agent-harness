@@ -109,6 +109,7 @@ Write it to `docs/harness-install-report.md` and print the summary:
 
 ## Failure handling
 
-Stop and report. Never silently fall back, never disable a gate to finish,
-never leave the repo half-migrated — if you must stop mid-phase, say exactly
-which phase and what state the repo is in.
+Stop after one failed attempt and diagnose the boundary. Report the exact gate,
+hook, sandbox, permission, or host-classifier block; its likely cause; the phase
+and repository state left behind; and safe options for proceeding. Never loop,
+silently reword, disable a check, or leave the repository half-migrated.

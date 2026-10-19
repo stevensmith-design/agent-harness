@@ -226,6 +226,14 @@ Seven more keep it honest over months rather than weeks:
 
 The most common failure is applying product-CI ceremony to a one-page memo. Match enforcement to the cost of the failure it prevents.
 
+The same proportionality applies to external-service obligations. A change to
+an API, SDK, data provider, platform, store, or the data crossing that boundary
+needs a current-terms checkpoint while the design is still cheap to change. It
+does not make a whole-application compliance audit an every-PR gate. Use the
+`external-terms-audit` overlay for incidents, material launches, formal reports,
+or portfolio audits; keep the normal path scoped to the affected integration
+and its upstream/downstream data flow.
+
 | Rung | What exists | Add it when |
 |---|---|---|
 | **L0 Guidance** | reference examples, a checklist | always — it is free |

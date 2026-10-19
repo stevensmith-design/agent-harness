@@ -59,6 +59,12 @@ A harness is an **instruction graph** plus an **enforcement system** plus a **ma
 
 Security is tiered rather than uniform — always-on rules, per-PR gates, escalation by path, and `/harness-threat-model` + `/harness-security-review` on demand. `docs/security.md` explains the tiering and, more usefully, states what the harness does *not* do.
 
+Changes to external APIs, SDKs, data providers, platforms, stores, or the data
+crossing those boundaries carry a concise terms-and-policy checkpoint in the
+base security rule. Projects that need incident, launch, client, legal, or
+whole-application evidence can apply the opt-in `external-terms-audit` overlay;
+the full audit never runs as part of ordinary `make check`.
+
 Project-specific local data belongs in `security.sensitive_paths` in
 `harness.config.yaml` (for example `burrow.db` and `burrow.db-*`). The runtime
 hook blocks direct reads and shell commands that could print matching content;

@@ -405,6 +405,8 @@ if [ "$LEVEL" -ge 2 ]; then
   has .github/workflows/gates.yml
   has .github/pull_request_template.md
   has .githooks/pre-commit
+  has .githooks/pre-push
+  has .claude/hooks/guard-git-network.sh
   if [ "$CI_MODE" = 1 ]; then
     info "local git-hook installation is not required in CI"
   elif [ "$(git -C "$HARNESS_ROOT" config core.hooksPath 2>/dev/null)" = ".githooks" ]; then

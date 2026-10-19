@@ -1,6 +1,6 @@
 # Harness Starter Kit
 
-**v0.15.0** — **Harnessify anything.**
+**v0.16.0** — **Harnessify anything.**
 
 Tell it about your work, or point it at where your work already lives — a folder, a repository, your Slack or Notion — and it builds a harness around how your team actually works.
 
