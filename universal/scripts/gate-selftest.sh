@@ -285,7 +285,7 @@ run fail "a skill that tells the agent to auto-install and execute" --expect "T1
 
 hdr "rule-coverage"
 build_repo
-./scripts/harness-init.sh --yes >/dev/null 2>&1
+setup ./scripts/harness-init.sh --yes --stack "selftest stack"
 # Add a rule with a deliberately dead glob. Mutating a shipped rule is fragile:
 # harness-init deletes the rules that do not apply to the detected stack, so the
 # file you meant to break may not be there any more.
@@ -301,6 +301,70 @@ RULE
 printf '\n# note: harness-init replaces the <product> placeholder\n' >> harness.config.yaml
 git add -A >/dev/null 2>&1 && git commit -qm init >/dev/null 2>&1
 run fail "a dead rule glob, with <product> present in a comment" ./scripts/gates/rule-coverage.sh
+
+hdr "harness-init — a dry run writes nothing; every answer is an argument"
+# Found in a field test: --dry-run guarded only the config writes, so it still
+# rewrote AGENTS.md, deleted rules and ran both generators; and with no flag per
+# answer, an agent could only reach "UI enabled" by typing into a pseudo-terminal.
+# tree_state — every path, every file's bytes, the index, HEAD and git status.
+tree_state() {
+  { find . -path ./.git -prune -o -print | LC_ALL=C sort
+    find . -path ./.git -prune -o -type f -print0 | LC_ALL=C sort -z | xargs -0 cksum
+    git ls-files -s; git rev-parse HEAD; git symbolic-ref -q HEAD
+    git status --porcelain --untracked-files=all; } | cksum
+}
+# init_untouched <0|nonzero> <args...> — run harness-init with no terminal, then
+# fail unless its exit status matched AND the tree is byte-identical.
+init_untouched() {
+  local want="$1" before out rc; shift
+  before=$(tree_state)
+  out=$(./scripts/harness-init.sh "$@" </dev/null 2>&1); rc=$?
+  printf '%s\n' "$out"
+  [ "$(tree_state)" = "$before" ] || { echo "the tree changed"; return 1; }
+  if [ "$want" = 0 ]; then [ "$rc" -eq 0 ]; else [ "$rc" -ne 0 ]; fi
+}
+init_no_tty() { ./scripts/harness-init.sh "$@" </dev/null; }
+rule_inventory() {
+  for d in .agents/rules .cursor/rules .github/instructions; do ls "$d"; done | LC_ALL=C sort
+}
+copies_of() {
+  local n=0 p
+  for p in ".agents/rules/$1.md" ".cursor/rules/$1.mdc" ".github/instructions/$1.instructions.md"; do
+    [ -f "$p" ] && n=$((n+1))
+  done
+  echo "$n $1 copies"
+}
+init_values() {
+  ( . scripts/lib.sh
+    printf '%s|' "$(cfg harness.adapter)" "$(cfg harness.level)" "$(cfg project.name)" \
+      "$(cfg project.stack)" "$(cfg project.src)" "$(cfg project.tests)" "$(cfg design.enabled)" )
+}
+build_repo
+INIT_ARGS=(--adapter generic --name demo --stack "Node.js 22 ESM" --src src --tests tests --datastore false --level L2)
+run pass "a complete dry run leaves every file, the index and HEAD unchanged" \
+  --expect "dry run — nothing was written" init_untouched 0 --dry-run "${INIT_ARGS[@]}" --ui false
+run pass "a dry run reports the planned configuration" \
+  --expect 'would set project.stack = "Node.js 22 ESM"' init_no_tty --dry-run "${INIT_ARGS[@]}" --ui false
+run pass "a dry run reports each planned rule removal" \
+  --expect "would remove .github/instructions/design-tokens.instructions.md" init_no_tty --dry-run "${INIT_ARGS[@]}" --ui false
+run pass "a dry run with invalid input fails and changes nothing" \
+  --expect "--ui 'yes' is not allowed" init_untouched 1 --dry-run "${INIT_ARGS[@]}" --ui yes
+run pass "an unknown option fails before any write" \
+  --expect "unknown option '--bogus'" init_untouched 1 --bogus
+run pass "--yes with no stack fails before writing and names --stack" \
+  --expect "pass --stack" init_untouched 1 --yes
+rule_inventory | grep -v '^data-access\.' > "$WORK/rules-expected"
+run pass "a generic/UI init runs with every answer as an argument and no terminal" \
+  --expect "harness.config.yaml written" init_no_tty "${INIT_ARGS[@]}" --ui true
+run pass "it writes the project values it was given" \
+  --expect 'generic|L2|demo|Node.js 22 ESM|src|tests|true|' init_values
+run pass "it fills the AGENTS.md placeholders" \
+  --expect '`demo` is a `Node.js 22 ESM` project. Source in `src/`, tests in `tests/`.' cat AGENTS.md
+run pass "--ui true keeps every design-tokens rule copy" --expect "3 design-tokens copies" copies_of design-tokens
+run pass "--datastore false removes every data-access rule copy" --expect "0 data-access copies" copies_of data-access
+run pass "--datastore false removes nothing else" --expect "" diff "$WORK/rules-expected" <(rule_inventory)
+run pass "Claude, Cursor and Copilot views are in sync after init" --expect "tool files in sync" ./scripts/harness-sync.sh --check
+run pass "generated CI is in sync after init" --expect "CI files in sync" ./scripts/ci-gen.sh --check
 
 hdr "requirements register"
 build_repo

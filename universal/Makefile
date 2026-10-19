@@ -191,8 +191,8 @@ verify: ## Prove the app actually runs, and record the evidence
 	@./scripts/verify.sh
 
 ## ---------- The harness itself ----------
-harness-init: ## Interactive fill-in of harness.config.yaml
-	@./scripts/harness-init.sh
+harness-init: ## Fill in harness.config.yaml (asks on a terminal; ARGS='--dry-run --stack …' — see --help)
+	@./scripts/harness-init.sh $(ARGS)
 pin-actions: ## Resolve CI action tags to commit SHAs (a tag is mutable; a SHA is not)
 	@./scripts/pin-actions.sh
 ci-gen: ## Render CI files from harness.config.yaml (github/gitlab/bitrise)
