@@ -33,7 +33,7 @@ file=$(printf '%s' "$input" | tr -d '\n' \
 [ -n "$file" ] || exit 0
 rel="${file#"${CLAUDE_PROJECT_DIR:-}"/}"
 case "$rel" in
-  AGENTS.md|harness.config.yaml|.agents/*|.github/workflows/*|docs/decisions/*|scripts/gates/*|scripts/lib.sh)
+  AGENTS.md|harness.config.yaml|.agents/*|.claude/*|.githooks/*|.github/workflows/*|docs/decisions/*|scripts/gates/*|scripts/lib.sh)
     cat >&2 <<MSG
 Blocked: $rel is harness configuration. Changing it during product work is how
 gates get quietly relaxed.
@@ -42,6 +42,9 @@ If this change is genuinely needed, say why on the record and it unlocks for
 this branch only:
   ./scripts/declare-intent.sh harness-edit "<why, in a sentence>"
 Or run /harness-retro, which does that for you.
+
+If this classification looks wrong, stop after this attempt. Report the matched
+path and safe options; do not switch tools or rewrite the edit to evade the hook.
 MSG
     exit 2 ;;
 esac

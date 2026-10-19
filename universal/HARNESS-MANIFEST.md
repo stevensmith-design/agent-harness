@@ -72,7 +72,7 @@ overwriting them, and stops on the first failed gate.
 │
 ├── .claude/                        Claude Code view
 │   ├── settings.json               one ownership-based permission policy
-│   ├── hooks/{session-start,block-protected,block-sensitive-access,block-package-install}.sh
+│   ├── hooks/{session-start,block-protected,block-sensitive-access,block-package-install,guard-git-network}.sh
 │   ├── agents/reviewer.md          independent reviewer, no write tools
 │   └── skills/ rules/              symlinks into .agents/
 │
@@ -82,7 +82,8 @@ overwriting them, and stops on the first failed gate.
 │   ├── instructions/*.md           GENERATED — do not edit
 │   ├── pull_request_template.md    evidence contract, enforced in CI
 │   └── workflows/{gates,harness,governance,agent-review}.yml
-├── .githooks/pre-commit            prevent locally what CI can only detect
+├── .githooks/pre-commit            fast commit-time product checks
+├── .githooks/pre-push              block default-branch and history-rewrite pushes
 ├── .gitattributes                  marks generated views linguist-generated
 ├── .mcp.json.example               placeholder MCP servers — tokens by ${VAR} only
 ├── .env.sample                     variable NAMES only, never values
@@ -160,6 +161,9 @@ overwriting them, and stops on the first failed gate.
       `make ci-gen`. Do not edit `.github/workflows/gates.yml` directly — it is
       generated, and `make ci` fails on a hand-edit.
 - [ ] `make install-hooks`, then confirm `git config core.hooksPath` = `.githooks`.
+- [ ] Open one real PR and confirm the generated CI actually starts and reports
+      its required checks. Record this once; do not turn account/repository
+      activation into another check on every PR.
 - [ ] Confirm the default branch and repository protection used by the PR workflow.
 - [ ] Turn the two or three rules your team most cares about into `design.forbid`
       entries or new gate scripts.

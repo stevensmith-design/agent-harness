@@ -5,7 +5,7 @@
 # If you add a key, teach something to read it in the same change.
 
 name: "{{HARNESS_NAME}}"
-kit_version: "0.15.0"
+kit_version: "0.16.0"
 
 # template | instance — doctor tolerates unfilled placeholders in template mode and
 # fails on them in instance mode. Flip this last, when the fill-in is done.

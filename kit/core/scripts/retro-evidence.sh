@@ -81,7 +81,7 @@ CP_FAIL=$(printf '%s\n' "$CP_LINES" | grep -e . -- | awk -F'\t' -v l="$LAST" '(l
 # Judged examples have no date in their name, so compare modification times
 # against a reference file stamped at the end of the retro day. `touch -t` and
 # `find -newer` behave the same on BSD and GNU.
-REF=$(mktemp 2>/dev/null) || REF=""
+REF=$(mktemp "${TMPDIR:-/tmp}/harness-kit.XXXXXX" 2>/dev/null) || REF=""
 newer_count() {
   d=$1
   [ -d "$d" ] || { printf '0\n'; return; }

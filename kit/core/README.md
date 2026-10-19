@@ -88,7 +88,8 @@ gate rather than by review — which is the argument for the gate.
 | `./scripts/review-staleness.sh` | Is this review repeating the last one? Above the threshold the instruction is not "fix faster" — it is "write down why these keep surviving". |
 | `./scripts/declare-harness-change.sh "<why>"` | Declares intent before editing the harness. |
 | `bash scripts/checkpoint.sh` | **The point work has to pass before it counts as done.** Runs the work check once configured, or the data-boundary guardrail before that, and records the result. It runs at intentional handoff/commit points, not after every edit or every attempt to end a conversation. |
-| `scripts/hooks/pre-commit` | The same checkpoint at the commit, in a repository. Off until the owner runs `git config core.hooksPath scripts/hooks` and `chmod +x scripts/hooks/pre-commit`. |
+| `scripts/hooks/pre-commit` | The same checkpoint at the commit, in a repository. Off until the owner enables `scripts/hooks` as the Git hooks path. |
+| `scripts/hooks/pre-push` | Ref-level backstop: refuses direct default-branch pushes, tag pushes, and history rewrites while allowing ordinary owned-branch publication and cleanup. |
 | `./scripts/hooks/session-start.sh` | Runs automatically at session start (wired in `.claude/settings.json`). Reports whether this harness has ever been configured, whether it has ever carried work, whether a retro is due, and whether this is your first session in this working copy. Never blocks. |
 
 ## First steps

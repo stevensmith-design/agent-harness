@@ -27,7 +27,7 @@ python3 core/scripts/scan-skill-trust.py skills skill-trust-allow.tsv \
   || fail "kit skills contain unsafe instruction shapes"
 
 # ── 1. References resolve ────────────────────────────────────────────────────
-MISS=$(mktemp 2>/dev/null) || MISS=""
+MISS=$(mktemp "${TMPDIR:-/tmp}/harness-kit.XXXXXX" 2>/dev/null) || MISS=""
 [ -n "$MISS" ] || fail "cannot create a temp file — refusing to report a result"
 n_refs=0
 for f in $DOCS; do
@@ -256,7 +256,7 @@ LEAK_PATHS=$(grep -rnIE "${LEAK_EXCL[@]}" -e '/Users/[A-Za-z]' -e '/home/[a-z][a
 LEAK_CITE=$(grep -rnIiE "${LEAK_EXCL[@]}" -e '(^|[^A-Za-z])specimens?([^A-Za-z]|$)' -e 'studied harness' -e 'harnesses (we |I )?studied' . 2>/dev/null | grep -v '/\.git/')
 LEAK_TERMS=""
 if [ -f .private-terms ]; then
-  TERMS=$(mktemp 2>/dev/null) || fail "cannot create a temp file — refusing to report a result"
+  TERMS=$(mktemp "${TMPDIR:-/tmp}/harness-kit.XXXXXX" 2>/dev/null) || fail "cannot create a temp file — refusing to report a result"
   grep -ve '^[[:space:]]*#' -e '^[[:space:]]*$' -- .private-terms > "$TERMS"
   if [ "$(nlines "$TERMS")" -gt 0 ]; then
     LEAK_TERMS=$(grep -rnIiF "${LEAK_EXCL[@]}" -f "$TERMS" . 2>/dev/null | grep -v '/\.git/')

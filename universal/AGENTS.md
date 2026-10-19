@@ -24,7 +24,7 @@ Generated code (codegen output, API clients, build output) is a build product �
 - **Never access or disclose secrets or identifiable personal data.** Do not open `.env`, credential, key, or service-account files; use sample key names and masked formats only.
 - **Smallest diff that satisfies the spec.** No speculative abstraction, drive-by refactors, or dependency installs without explicit operator approval and `/harness-dependency-intake`.
 - **Every fallible call is handled** — caught, logged, surfaced to the user, and covered by a test.
-- **Stop and report on gate failure.** Never work around a failing check, disable a test, or loosen a lint rule to go green.
+- **Stop, diagnose once, and report any block** — gate, hook, sandbox, permission, or host classifier. Name the exact boundary, likely cause, and safe ways forward. Never loop, silently reword a command, weaken a check, or hand the person commands to bypass it.
 - **Never commit or push directly to `main`.** Work on a short-lived branch. The agent may push, update, merge, and clean up work it owns when the requested workflow and repository protections allow it.
 - **Ambiguity is marked, not guessed.** Write `[NEEDS CLARIFICATION: question]` in the spec and stop.
 

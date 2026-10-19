@@ -617,6 +617,11 @@ run fail "a configured root product file is not mistaken for harness" ./scripts/
 
 hdr "surface policy — the block that nothing used to read"
 build_repo
+mkdir -p test && printf 'test("works", () => {});\n' > test/app.test.js
+git add -A >/dev/null 2>&1 && git commit -qm test-only >/dev/null 2>&1
+run pass "a conventional test directory is covered by the shipped policy" \
+  --expect "surfaces touched: tests" ./scripts/gates/policy.sh main
+build_repo
 mkdir -p src/auth && printf 'export const login = 1;\n' > src/auth/login.ts
 git add -A >/dev/null 2>&1 && git commit -qm auth >/dev/null 2>&1
 run fail "an L3 surface touched while governance is off" ./scripts/gates/policy.sh main
@@ -1329,6 +1334,7 @@ hdr "hooks read what Claude Code actually sends"
 # saw them doing nothing. Feed them the real shape.
 build_repo
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"%s/AGENTS.md\",\"old_string\":\"a\",\"new_string\":\"b\"}}' \"\$PWD\" > \"$WORK/in-protected.json\""
+setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"%s/.githooks/pre-push\"}}' \"\$PWD\" > \"$WORK/in-githook.json\""
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"%s/src/app.ts\",\"content\":\"a note that says \\\\\"file_path\\\\\": \\\\\"AGENTS.md\\\\\"\"}}' \"\$PWD\" > \"$WORK/in-source.json\""
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"%s/.env\"}}' \"\$PWD\" > \"$WORK/in-secret.json\""
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"%s/.env.sample\"}}' \"\$PWD\" > \"$WORK/in-sample.json\""
@@ -1338,7 +1344,15 @@ setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"cat .env .env.sample\"}}' > \"$WORK/in-mixed-secret.json\""
 setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"node -e '\''const event={key: 1}; console.log(event.key)'\''\"}}' > \"$WORK/in-member-access.json\""
 setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"printf '\''set expectations in docs'\''\"}}' > \"$WORK/in-set-prose.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"printf '\''credential handling is documented'\''\"}}' > \"$WORK/in-credential-prose.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"grep -E '\''env|token'\'' docs/security.md\"}}' > \"$WORK/in-env-pattern.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"cat service-account-credentials.json\"}}' > \"$WORK/in-credential-file.json\""
 setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"cat private.key\"}}' > \"$WORK/in-private-key.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git fetch origin --prune\"}}' > \"$WORK/in-git-fetch.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git fetch --upload-pack=/tmp/run-me origin\"}}' > \"$WORK/in-git-upload-pack.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git push origin --no-veri feat/demo\"}}' > \"$WORK/in-git-no-verify.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git push origin main\"}}' > \"$WORK/in-git-main.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"gh pr merge 42 --admin\"}}' > \"$WORK/in-gh-admin.json\""
 setup ./scripts/sub.sh 's/sensitive_paths: \[\]/sensitive_paths: ["burrow.db", "burrow.db-*"]/' harness.config.yaml
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"sqlite3 burrow.db .dump\"}}' > \"$WORK/in-project-sensitive.json\""
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"%s/burrow.db-wal\"}}' \"\$PWD\" > \"$WORK/in-project-sensitive-read.json\""
@@ -1354,6 +1368,12 @@ run pass "program member access such as event.key is not a credential filename" 
   bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-sensitive-access.sh < \"$WORK/in-member-access.json\""
 run pass "the word set inside prose is not an environment dump" \
   bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-sensitive-access.sh < \"$WORK/in-set-prose.json\""
+run pass "the word credential inside prose is not a credential filename" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-sensitive-access.sh < \"$WORK/in-credential-prose.json\""
+run pass "a quoted env alternation is not an environment dump" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-sensitive-access.sh < \"$WORK/in-env-pattern.json\""
+run fail "a credential-shaped config filename remains blocked" --expect "credential filename" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-sensitive-access.sh < \"$WORK/in-credential-file.json\""
 run fail "a real private-key filename remains blocked" --expect "credential filename" \
   bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-sensitive-access.sh < \"$WORK/in-private-key.json\""
 run fail "project-sensitive data is blocked from shell output" --expect "security.sensitive_paths" \
@@ -1376,6 +1396,8 @@ run fail "download-to-shell stays blocked even after declaration" --expect "outs
 setup ./scripts/declare-dependency-change.sh --clear
 run fail "block-protected stops an edit to AGENTS.md sent on stdin" --expect "Blocked: AGENTS.md" \
   bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-protected.json\""
+run fail "block-protected also covers executable Git policy" --expect "Blocked: .githooks/pre-push" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-githook.json\""
 run pass "and lets a source edit through, even when its content quotes a protected path" \
   bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-source.json\""
 setup ./scripts/declare-intent.sh harness-edit "selftest: a declared harness change"
@@ -1385,16 +1407,29 @@ run pass "static settings leave protected-edit decisions to the unlockable hook"
   bash -c "! grep -qF 'Edit(./AGENTS.md)' .claude/settings.json && echo hook-owned"
 setup ./scripts/declare-intent.sh --clear
 
+run pass "network guard admits the routine fetch shape" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-fetch.json\""
+run fail "network guard rejects fetch alternate-program execution" --expect "alternate programs" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-upload-pack.json\""
+run fail "network guard rejects abbreviated hook bypass" --expect "hook bypasses" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-no-verify.json\""
+run fail "network guard rejects a direct default-branch push" --expect "non-default branch" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-main.json\""
+run fail "network guard rejects an admin merge" --expect "bypasses repository protections" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-gh-admin.json\""
+run fail "pre-push rejects the actual default destination ref" --expect "direct updates to 'main'" \
+  bash -c "printf 'refs/heads/feat/demo %040d refs/heads/main %040d\\n' 1 0 | \"$SRC/.githooks/pre-push\" origin local-test-remote"
+
 hdr "ownership-based Git and PR authority"
 build_repo
-run pass "routine branch pushes and PR merges are available" --expect "ownership-authority" \
-  bash -c 'grep -qF "Bash(git fetch:*)" .claude/settings.json && grep -qF "Bash(git push:*)" .claude/settings.json && grep -qF "Bash(gh pr merge:*)" .claude/settings.json && echo ownership-authority'
+run pass "routine branch pushes and PR merges use narrow shapes" --expect "ownership-authority" \
+  bash -c 'grep -qF "Bash(git fetch origin --prune)" .claude/settings.json && grep -qF "Bash(git push -u origin:*)" .claude/settings.json && grep -qF "Bash(gh pr merge:*)" .claude/settings.json && echo ownership-authority'
 run pass "macOS Git and GitHub network commands use narrow sandbox exclusions" --expect "ssh-git-exclusions" \
-  bash -c 'grep -qF '\''"excludedCommands": ["git fetch *", "git pull *", "git push *", "gh *"]'\'' .claude/settings.json && grep -qF '\''"github.com"'\'' .claude/settings.json && echo ssh-git-exclusions'
+  bash -c 'grep -qF '\''"git fetch origin --prune"'\'' .claude/settings.json && grep -qF '\''"gh pr merge *"'\'' .claude/settings.json && ! grep -qF '\''"gh *"'\'' .claude/settings.json && ! grep -qF '\''"git push *"'\'' .claude/settings.json && grep -qF '\''"github.com"'\'' .claude/settings.json && echo ssh-git-exclusions'
 run pass "network Git instructions preserve matchable command shapes" --expect "simple-git-network-commands" \
   bash -c 'grep -qF "Run network Git commands" .agents/rules/git-flow.md && grep -qF "Do not hide them" .agents/rules/git-flow.md && echo simple-git-network-commands'
 run pass "destructive history rewriting remains denied" --expect "destructive-denied" \
-  bash -c 'grep -qF "Bash(git push --force:*)" .claude/settings.json && grep -qF "Bash(git reset --hard:*)" .claude/settings.json && echo destructive-denied'
+  bash -c 'grep -qF "Bash(git push --force:*)" .claude/settings.json && grep -qF "Bash(git push --force-with-lease:*)" .claude/settings.json && grep -qF "Bash(git reset --hard:*)" .claude/settings.json && echo destructive-denied'
 run pass "edit-time and finish-time checks are intentional, not automatic" --expect "checkpoint-checks" \
   bash -c '! grep -qE "post-edit-check|gate-done" .claude/settings.json && echo checkpoint-checks'
 

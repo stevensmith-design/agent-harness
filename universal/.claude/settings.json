@@ -5,9 +5,10 @@
       "Read", "Glob", "Grep", "Edit", "Write",
       "Bash(make:*)", "Bash(./scripts/:*)",
       "Bash(git status)", "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)",
-      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git checkout -b:*)", "Bash(git switch:*)", "Bash(git fetch:*)",
-      "Bash(git push:*)", "Bash(git pull --ff-only:*)", "Bash(git branch -d:*)", "Bash(git worktree:*)",
-      "Bash(gh pr create:*)", "Bash(gh pr view:*)", "Bash(gh pr checks:*)", "Bash(gh pr merge:*)",
+      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git checkout -b:*)", "Bash(git switch:*)",
+      "Bash(git fetch origin --prune)", "Bash(git fetch --prune origin)", "Bash(git pull --ff-only origin:*)",
+      "Bash(git push -u origin:*)", "Bash(git push origin:*)", "Bash(git branch -d:*)", "Bash(git worktree:*)",
+      "Bash(gh pr create:*)", "Bash(gh pr view:*)", "Bash(gh pr checks:*)", "Bash(gh pr update-branch:*)", "Bash(gh pr merge:*)",
       "Bash(npm run:*)", "Bash(pnpm run:*)", "Bash(pnpm exec:*)", "Bash(yarn run:*)", "Bash(npx --no-install:*)",
       "Bash(flutter:*)", "Bash(dart:*)", "Bash(fvm:*)"
     ],
@@ -20,7 +21,7 @@
       "Bash(flutter pub add:*)", "Bash(flutter pub get:*)", "Bash(dart pub add:*)", "Bash(dart pub get:*)"
     ],
     "deny": [
-      "Bash(git push --force:*)", "Bash(git reset --hard:*)",
+      "Bash(git push --force:*)", "Bash(git push --force-with-lease:*)", "Bash(git reset --hard:*)",
       "Bash(rm -rf:*)", "Bash(sudo:*)", "Bash(curl:* | sh)", "Bash(:(){:|:&};:)",
       "Read(./.env)", "Read(./.env.local)", "Read(./.env.production)", "Read(./.env.development)", "Read(./.env.test)", "Read(./.env.staging)",
       "Read(./**/*credential*)", "Read(./**/*service-account*)",
@@ -31,7 +32,7 @@
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
-    "excludedCommands": ["git fetch *", "git pull *", "git push *", "gh *"],
+    "excludedCommands": ["git fetch origin --prune", "git fetch --prune origin", "git pull --ff-only origin *", "git push -u origin *", "git push origin *", "gh pr create *", "gh pr view *", "gh pr checks *", "gh pr update-branch *", "gh pr merge *"],
     "filesystem": { "allowRead": ["."], "denyRead": ["./.env", "./.env.local", "./.env.production", "./.env.development", "./.env.test", "./.env.staging", "~/.ssh", "~/.aws"], "allowWrite": ["."] },
     "network": { "allowedDomains": ["registry.npmjs.org", "github.com", "*.github.com", "pub.dev", "*.pub.dev"] }
   },
@@ -39,6 +40,7 @@
     "SessionStart": [{ "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh" }] }],
     "PreToolUse":   [
       { "matcher": "Read|Grep|Glob|Bash", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-sensitive-access.sh" }] },
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-git-network.sh" }] },
       { "matcher": "Bash", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-package-install.sh" }] },
       { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-protected.sh" }] }
     ],

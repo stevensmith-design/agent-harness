@@ -8,7 +8,7 @@
 # Run `make harness-sync` after any change here.
 
 harness:
-  version: 1.16.0
+  version: 1.17.0
   # Is this the harness's OWN repository, or a repo that installed it?
   #
   # It matters for exactly one check. scripts/gates/skill-namespace.sh requires
@@ -78,6 +78,10 @@ surfaces:
     paths: ["src/**"]
     risk: medium
     level: L2
+  - id: tests
+    paths: ["test/**", "tests/**", "__tests__/**", "spec/**"]
+    risk: low
+    level: L1
   - id: auth
     paths: ["src/**/auth/**", "src/**/session/**"]
     risk: high          # high risk => human approval required before merge
