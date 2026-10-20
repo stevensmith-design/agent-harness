@@ -3,12 +3,14 @@
     "defaultMode": "acceptEdits",
     "allow": [
       "Read", "Glob", "Grep", "Edit", "Write",
-      "Bash(make:*)", "Bash(./scripts/:*)",
+      "Bash(make:*)",
       "Bash(git status)", "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)",
       "Bash(git add:*)", "Bash(git commit:*)", "Bash(git checkout -b:*)", "Bash(git switch:*)",
       "Bash(git fetch origin --prune)", "Bash(git fetch --prune origin)", "Bash(git pull --ff-only origin:*)",
-      "Bash(git push -u origin:*)", "Bash(git push origin:*)", "Bash(git branch -d:*)", "Bash(git worktree:*)",
-      "Bash(gh pr create:*)", "Bash(gh pr view:*)", "Bash(gh pr checks:*)", "Bash(gh pr update-branch:*)", "Bash(gh pr merge:*)",
+      "Bash(git push -u origin:*)", "Bash(git push origin:*)", "Bash(git branch -d:*)",
+      "Bash(git worktree list)", "Bash(git worktree add:*)", "Bash(git worktree remove:*)", "Bash(git worktree prune)",
+      "Bash(gh pr create:*)", "Bash(gh pr view:*)", "Bash(gh pr checks:*)", "Bash(gh pr update-branch:*)",
+      "Bash(gh pr merge * --merge --delete-branch)", "Bash(gh pr merge * --squash --delete-branch)",
       "Bash(npm run:*)", "Bash(pnpm run:*)", "Bash(pnpm exec:*)", "Bash(yarn run:*)", "Bash(npx --no-install:*)",
       "Bash(flutter:*)", "Bash(dart:*)", "Bash(fvm:*)"
     ],
@@ -18,7 +20,8 @@
       "Bash(yarn install:*)", "Bash(yarn add:*)", "Bash(yarn up:*)",
       "Bash(bun install:*)", "Bash(bun add:*)", "Bash(pip install:*)", "Bash(pip3 install:*)",
       "Bash(uv add:*)", "Bash(uv sync:*)", "Bash(poetry add:*)", "Bash(cargo add:*)", "Bash(go get:*)",
-      "Bash(flutter pub add:*)", "Bash(flutter pub get:*)", "Bash(dart pub add:*)", "Bash(dart pub get:*)"
+      "Bash(flutter pub add:*)", "Bash(flutter pub get:*)", "Bash(dart pub add:*)", "Bash(dart pub get:*)",
+      "Bash(./scripts/declare-intent.sh:*)", "Bash(./scripts/declare-dependency-change.sh:*)"
     ],
     "deny": [
       "Bash(git push --force:*)", "Bash(git push --force-with-lease:*)", "Bash(git reset --hard:*)",
@@ -42,7 +45,7 @@
       { "matcher": "Read|Grep|Glob|Bash", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-sensitive-access.sh" }] },
       { "matcher": "Bash", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-git-network.sh" }] },
       { "matcher": "Bash", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-package-install.sh" }] },
-      { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-protected.sh" }] }
+      { "matcher": "Edit|Write|Bash", "hooks": [{ "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-protected.sh" }] }
     ],
     "PostToolUse":  [],
     "Stop":         []

@@ -17,7 +17,7 @@
 #   ./scripts/gates/policy.sh [base-ref]
 . "$(dirname "$0")/../lib.sh"
 
-BASE="${1:-$(cfg git.main_branch main)}"
+BASE=$(resolve_base_ref "${1:-}")
 
 # surfaces: is a list of maps. Emit id<TAB>paths<TAB>risk<TAB>level per entry.
 surfaces() {
@@ -126,11 +126,12 @@ fi
 # cannot outlive the change it was written for.
 #
 # What it is NOT, and what this gate used to imply that it was: authentication.
-# scripts/declare-intent.sh proves a declaration was made, not that a human made
-# it — any agent that can run repository scripts can author one, including the
-# agent whose change is being approved. So this gate requires an APPROVAL
-# DECLARATION (trust: self_reported), and no longer claims to require a human
-# approval. If a real one is needed, it has to come from a channel that issues
+# scripts/declare-intent.sh proves an operator-approved declaration was made,
+# because the runtime places that exact command behind an approval prompt and
+# blocks direct mutation of its file. It does not authenticate the identity
+# named in the reason. So this gate requires an APPROVAL DECLARATION
+# (trust: self_reported), and does not claim cryptographic human identity. If a
+# real authenticated approval is needed, it has to come from a channel that issues
 # identity — a GitHub required review or a protected environment — and this
 # harness reads neither today. That gap is named in HARNESS-GUIDE.md rather than
 # papered over here.
@@ -143,7 +144,7 @@ if [ "$max_risk" = "high" ]; then
     warn "    Record it from the job that runs AFTER a required review, not the one that builds:"
     warn "      ./scripts/declare-intent.sh high-risk \"<who reviewed it, and where>\""
     warn "    The declaration is bound to this branch and does not carry to the next one."
-    warn "    Note: this records a claim, it does not verify one. Only a required"
+    warn "    Note: this records an operator-approved claim; it does not authenticate the named reviewer. Only a required"
     warn "    reviewer on the PR makes the approval something a person actually gave."
     rc=1
   else

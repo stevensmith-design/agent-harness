@@ -4,7 +4,7 @@ description: The harness improving itself from evidence — count what happened 
 license: MIT
 metadata:
   harness.tier: maintenance
-allowed-tools: Read Glob Grep Edit Write Bash(git:*) Bash(make:*) Bash(./scripts/:*) Bash(python3 scripts/mine-sessions.py:*)
+allowed-tools: Read Glob Grep Edit Write Bash(git:*) Bash(make:*) Bash(python3 scripts/mine-sessions.py:*)
 ---
 
 # harness-retro

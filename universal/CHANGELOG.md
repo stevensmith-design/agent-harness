@@ -16,6 +16,25 @@ existing one — so each entry says what an installed repo has to do.
   before any write, so an agent no longer needs a terminal. Without a terminal,
   an unanswered value fails — `--yes` accepts detected defaults but never the
   `<stack>` placeholder. `make harness-init ARGS='…'` passes them through.
+- The macOS Git/GitHub guard now decides whether a command is a network
+  operation before inspecting shell composition, resolves Git subcommands after
+  global options, rejects configuration/hook/refspec/force bypasses, and uses a
+  deny-by-default `gh` allowlist (`gh api` is not permitted).
+- Harness and dependency intent files are operator-controlled: direct Edit,
+  Write and recognizable Bash writes are blocked, declaration commands live in
+  the permission prompt list, and broad script/worktree/merge permissions were
+  replaced by documented command shapes. Protected-path classification now
+  resolves nested Git worktree roots and normalizes case on macOS; recognizable
+  shell redirects are covered, with CI retained as the full diff backstop.
+- Changed-file policy resolves an explicit base first, then GitHub's base ref,
+  then `origin/<main>`, and fails closed when no comparison is possible. API
+  implementation and machine-readable accepted contracts remain high-risk,
+  while shipped API documentation templates no longer make a fresh install a
+  high-risk change.
+- The secret-bearing automatic AI review workflow is no longer installed by
+  default. Governance checkout credentials do not persist, `jsonschema` is
+  pinned, and UI initialization/doctor emit a non-blocking warning when the
+  configured token directory does not exist.
 - `install.sh` now requires a Git target and never overwrites an existing
   project file. Shared-name collisions are preserved byte-for-byte and receive
   a `.harness-candidate` beside them for manual reconciliation; the old

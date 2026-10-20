@@ -5,7 +5,7 @@ license: MIT
 metadata:
   harness.tier: gate
   harness.destructive: "true"
-allowed-tools: Read Glob Grep Bash(make:*) Bash(./scripts/:*) Bash(git:*) Bash(gh:*)
+allowed-tools: Read Glob Grep Bash(make:*) Bash(./scripts/deploy.sh:*) Bash(./scripts/emit-evidence.sh:*) Bash(git:*) Bash(gh pr:*)
 ---
 
 # release

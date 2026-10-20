@@ -4,7 +4,7 @@ description: Start a piece of work correctly — turn a ticket or spec into a pr
 license: MIT
 metadata:
   harness.tier: workflow
-allowed-tools: Read Glob Grep Bash(git:*) Bash(make:*) Bash(gh issue:*) Bash(./scripts/:*)
+allowed-tools: Read Glob Grep Bash(git:*) Bash(make:*) Bash(gh issue:*)
 ---
 
 # branch

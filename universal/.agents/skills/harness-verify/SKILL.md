@@ -4,7 +4,7 @@ description: Prove the application actually runs and serves, then record the rec
 license: MIT
 metadata:
   harness.tier: gate
-allowed-tools: Read Write Edit Bash(make:*) Bash(./scripts/:*) Bash(curl:*)
+allowed-tools: Read Write Edit Bash(make:*) Bash(./scripts/emit-evidence.sh:*) Bash(curl:*)
 ---
 
 # verify

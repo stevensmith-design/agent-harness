@@ -144,7 +144,7 @@ constrains the reviewer, not the producer's ability to finish routine work.
 | `authenticated_human` | a channel that **issues identity** vouched for a person | **nothing in this harness today** |
 | `external_policy` | an authority outside this repository | **nothing in this harness today** |
 
-The last two rows are the honest part. `scripts/declare-intent.sh` proves a *declaration was made*, not that a human made it — any agent that can run repository scripts can author one, including the agent whose change it authorises. It is bound to a branch, it carries a reason, and it expires, all of which make it a good audit trail and a genuine improvement on the `HARNESS_HUMAN_APPROVED=1` boolean it replaced. It is not authentication, and nothing in the harness may describe it as such. The surface policy gate therefore requires an **approval declaration**, not a human approval.
+The last two rows are the honest part. `scripts/declare-intent.sh` proves an operator-approved *declaration was made*: the runtime asks on that exact command and blocks direct writes to its file. It is branch-bound, reasoned and expiring. It still does not authenticate the identity named in the reason, so nothing may describe it as a verified human review. The surface policy gate therefore requires an **approval declaration**; authenticated approval still belongs to a required reviewer or protected environment.
 
 To get an approval a person actually gave, route it through something that issues identity — a GitHub required review, or a protected deployment environment — and label *that* `authenticated_human`. Wiring one up is not done; it is a named gap, not an implied capability.
 
