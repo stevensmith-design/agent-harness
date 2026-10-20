@@ -4,7 +4,7 @@ description: Fix a defect so its whole class stops recurring — name the rule i
 license: MIT
 metadata:
   harness.tier: workflow
-allowed-tools: Read Glob Grep Edit Write Bash(git:*) Bash(make:*) Bash(./scripts/:*)
+allowed-tools: Read Glob Grep Edit Write Bash(git:*) Bash(make:*)
 ---
 
 # defect

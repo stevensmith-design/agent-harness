@@ -5,7 +5,7 @@ license: MIT
 metadata:
   harness.tier: install
   harness.destructive: "true"
-allowed-tools: Read Glob Grep Edit Write Bash(make:*) Bash(./scripts/:*) Bash(git:*)
+allowed-tools: Read Glob Grep Edit Write Bash(make:*) Bash(./scripts/harness-init.sh:*) Bash(git:*)
 ---
 
 # harness-init

@@ -154,13 +154,24 @@ fi
 cases=$((cases + 1))
 if grep -qF 'Bash(git fetch origin --prune)' "$TMP/.claude/settings.json" \
   && grep -qF 'Bash(git push -u origin:*)' "$TMP/.claude/settings.json" \
-  && grep -qF 'Bash(gh pr merge:*)' "$TMP/.claude/settings.json" \
+  && grep -qF 'Bash(gh pr merge * --merge --delete-branch)' "$TMP/.claude/settings.json" \
+  && ! grep -qF 'Bash(git worktree:*)' "$TMP/.claude/settings.json" \
+  && ! grep -qF 'Bash(gh pr merge:*)' "$TMP/.claude/settings.json" \
   && ! grep -qF '"git push *"' "$TMP/.claude/settings.json" \
   && ! grep -qF '"gh *"' "$TMP/.claude/settings.json" \
   && grep -qF 'never hand the person commands to run for you' "$TMP/AGENTS.md"; then
   printf '%s✓%s selftest: repository lifecycle is agent-operated\n' "$GRN" "$RST"
 else
   failures=$((failures + 1)); printf '%s✗ selftest: repository lifecycle fell back to human command handoff%s\n' "$RED" "$RST" >&2
+fi
+
+cases=$((cases + 1))
+if grep -A30 '"ask"' "$TMP/.claude/settings.json" | grep -qF 'Bash(./scripts/declare-harness-change.sh:*)' \
+  && grep -qF '"matcher": "Edit|Write|Bash"' "$TMP/.claude/settings.json" \
+  && grep -qF 'block-harness-write.sh' "$TMP/.claude/settings.json"; then
+  printf '%s✓%s selftest: harness declaration crosses the operator approval boundary\n' "$GRN" "$RST"
+else
+  failures=$((failures + 1)); printf '%s✗ selftest: harness declaration can bypass operator approval%s\n' "$RED" "$RST" >&2
 fi
 
 # Work compliance and harness health are separate commands. Ordinary checkpoints
@@ -212,9 +223,19 @@ printf '\n# harness edit\n' >> "$TMP/scripts/lib.sh"
 printf 'content edit\n' >> "$TMP/memory/README.md"
 expect_fail "content-split (mixed change)" bash scripts/gates/harness-content-split.sh
 # ...and that declaring intent releases it
-( cd "$TMP" && bash scripts/declare-harness-change.sh "selftest" >/dev/null 2>&1 )
+( cd "$TMP" && bash scripts/declare-harness-change.sh "selftest harness repair" >/dev/null 2>&1 )
 expect_pass "content-split (declared)" bash scripts/gates/harness-content-split.sh
 rm -f "$TMP/runs/.state/harness-change-declared"
+
+# GitHub PR checkouts normally have origin/main and GITHUB_BASE_REF, but no
+# local main branch. Changed-file checks must use that remote ref, not HEAD.
+( cd "$TMP" && git update-ref refs/remotes/origin/main refs/heads/main && git switch -qc feat/ci-base && git branch -D main >/dev/null )
+expect_pass "surface resolution (CI base without local main)" \
+  bash -c 'GITHUB_BASE_REF=main bash scripts/resolve-surface.sh --changed 2>&1 | grep -qF "changed against origin/main"'
+expect_fail_saying "surface resolution (unresolved CI base fails closed)" "does not resolve" \
+  bash -c 'GITHUB_BASE_REF=missing bash scripts/resolve-surface.sh --changed'
+( cd "$TMP" && git branch main refs/remotes/origin/main >/dev/null && git switch -q main \
+  && git branch -D feat/ci-base >/dev/null && git update-ref -d refs/remotes/origin/main )
 
 # --- first-contact: work begun inside an unconfigured harness -----------------
 # Both directions, because the whole value of this gate is the boundary: a
@@ -418,6 +439,13 @@ printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git fetch origin --pru
 printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git fetch --upload-pack=/tmp/run-me origin"}}' > "$TMP/.hook-git-upload-pack.json"
 printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git push origin --no-veri feat/demo"}}' > "$TMP/.hook-git-no-verify.json"
 printf '%s' '{"tool_name":"Bash","tool_input":{"command":"gh pr merge 42 --admin"}}' > "$TMP/.hook-gh-admin.json"
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"gh api repos/example/project/git/refs"}}' > "$TMP/.hook-gh-api.json"
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git -C /tmp push origin feat/demo"}}' > "$TMP/.hook-git-cwd.json"
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git -c core.hooksPath=/dev/null push origin feat/demo"}}' > "$TMP/.hook-git-config.json"
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git status | head -1"}}' > "$TMP/.hook-git-local-pipe.json"
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"time sh -c '\''bash scripts/checkpoint.sh | tee /tmp/check.log'\''"}}' > "$TMP/.hook-unrelated-wrapper.json"
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"printf x > runs/.state/harness-change-declared"}}' > "$TMP/.hook-intent-write.json"
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"printf x > AGENTS.md"}}' > "$TMP/.hook-harness-redirect.json"
 expect_fail_saying "runtime hook (sensitive read)" "sensitive file contents" \
   bash -c 'CLAUDE_PROJECT_DIR="$1" bash scripts/hooks/block-sensitive-runtime.sh < .hook-secret.json' _ "$TMP"
 expect_pass "runtime hook (public sample)" \
@@ -442,6 +470,20 @@ expect_fail_saying "network hook (abbreviated no-verify)" "hook bypasses" \
   bash -c 'bash scripts/hooks/guard-git-network.sh < .hook-git-no-verify.json'
 expect_fail_saying "network hook (admin merge)" "bypasses repository protections" \
   bash -c 'bash scripts/hooks/guard-git-network.sh < .hook-gh-admin.json'
+expect_fail_saying "network hook (gh api denied by default)" "not in the lifecycle allowlist" \
+  bash -c 'bash scripts/hooks/guard-git-network.sh < .hook-gh-api.json'
+expect_fail_saying "network hook (git -C cannot bypass classification)" "global options are not permitted" \
+  bash -c 'bash scripts/hooks/guard-git-network.sh < .hook-git-cwd.json'
+expect_fail_saying "network hook (git -c cannot disable hooks)" "global options are not permitted" \
+  bash -c 'bash scripts/hooks/guard-git-network.sh < .hook-git-config.json'
+expect_pass "network hook (local Git pipeline is unrelated)" \
+  bash -c 'bash scripts/hooks/guard-git-network.sh < .hook-git-local-pipe.json'
+expect_pass "network hook (unrelated wrapper may contain a pipe)" \
+  bash -c 'bash scripts/hooks/guard-git-network.sh < .hook-unrelated-wrapper.json'
+expect_fail_saying "harness hook (direct declaration write)" "operator-controlled declaration" \
+  bash -c 'CLAUDE_PROJECT_DIR="$PWD" bash scripts/hooks/block-harness-write.sh < .hook-intent-write.json'
+expect_fail_saying "harness hook (Bash redirect to harness)" "Blocked: AGENTS.md" \
+  bash -c 'CLAUDE_PROJECT_DIR="$PWD" bash scripts/hooks/block-harness-write.sh < .hook-harness-redirect.json'
 expect_fail_saying "pre-push (default destination ref)" "direct updates to 'main'" \
   bash -c "printf 'refs/heads/feat/demo %040d refs/heads/main %040d\\n' 1 0 | scripts/hooks/pre-push origin local-test-remote"
 rm -f "$TMP"/.hook-*.json

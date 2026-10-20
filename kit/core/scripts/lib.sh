@@ -230,6 +230,36 @@ cfg_has() {
   grep -qe "^${key}:" -- "$root/harness.yaml" 2>/dev/null
 }
 
+# comparison_base [explicit-ref] — resolve the real base in both local clones
+# and GitHub PR checkouts. A missing base is a failed policy check, never HEAD
+# (which would turn the changed set into an empty diff).
+comparison_base() {
+  local explicit="${1:-}" main candidate
+  main=$(cfg main_branch main)
+  if [ -n "$explicit" ]; then
+    for candidate in "$explicit" "origin/$explicit"; do
+      git rev-parse --verify -q "${candidate}^{commit}" >/dev/null 2>&1 \
+        && { printf '%s\n' "$candidate"; return 0; }
+    done
+    fail "comparison base '$explicit' does not resolve; fetch it before running changed-file checks"
+    return 1
+  fi
+  if [ -n "${GITHUB_BASE_REF:-}" ]; then
+    for candidate in "$GITHUB_BASE_REF" "origin/$GITHUB_BASE_REF"; do
+      git rev-parse --verify -q "${candidate}^{commit}" >/dev/null 2>&1 \
+        && { printf '%s\n' "$candidate"; return 0; }
+    done
+    fail "GITHUB_BASE_REF '$GITHUB_BASE_REF' does not resolve locally or as origin/$GITHUB_BASE_REF"
+    return 1
+  fi
+  for candidate in "origin/$main" "$main"; do
+    git rev-parse --verify -q "${candidate}^{commit}" >/dev/null 2>&1 \
+      && { printf '%s\n' "$candidate"; return 0; }
+  done
+  fail "no comparison base resolves (tried origin/$main and $main); refusing an empty changed-file result"
+  return 1
+}
+
 # cfg_int KEY DEFAULT — a config value used in arithmetic MUST be validated.
 # `[ "$n" -gt "60 lines" ]` errors, and in `[ ]` the error branch is the false
 # branch — so a malformed budget silently became a passing budget.

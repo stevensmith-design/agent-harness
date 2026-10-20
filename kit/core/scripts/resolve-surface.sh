@@ -227,9 +227,7 @@ case "$MODE" in
       pass "surfaces not resolved against a change set" "no git; substrate=$(cfg substrate workspace), mode=$(cfg mode template)"
       finish
     fi
-    BASE=$(cfg main_branch main)
-    RANGE="$BASE"
-    git rev-parse --verify -q "$BASE" >/dev/null 2>&1 || RANGE="HEAD"
+    RANGE=$(comparison_base) || exit 1
     # `git diff` speaks REPOSITORY-relative paths; every pattern here speaks
     # HARNESS-relative ones. With the harness in a subdirectory of a larger
     # repo the two never matched, every diffed path failed the existence test,

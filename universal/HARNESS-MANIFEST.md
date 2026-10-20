@@ -81,7 +81,7 @@ overwriting them, and stops on the first failed gate.
 │   ├── copilot-instructions.md     GENERATED — do not edit
 │   ├── instructions/*.md           GENERATED — do not edit
 │   ├── pull_request_template.md    evidence contract, enforced in CI
-│   └── workflows/{gates,harness,governance,agent-review}.yml
+│   └── workflows/{gates,harness,governance}.yml
 ├── .githooks/pre-commit            fast commit-time product checks
 ├── .githooks/pre-push              block default-branch and history-rewrite pushes
 ├── .gitattributes                  marks generated views linguist-generated
@@ -186,7 +186,9 @@ result can be untrue:
   "clean" or reports "I did not look" — never the second as the first. Gates say
   which of their inputs are required (`req_input`) and which are optional
   (`opt_input`, whose absence is printed as a blind spot).
-- **Permission is declared, not exported.** `./scripts/declare-intent.sh` records
+- **Permission is operator-approved and declared, not exported.** The runtime
+  asks before `./scripts/declare-intent.sh` or the dependency declaration runs,
+  blocks direct writes to both declaration files, and records
   a scope, a branch and a sentence. It stops applying when you leave the branch,
   which the `HARNESS_ALLOW_SELF_EDIT` / `HARNESS_HUMAN_APPROVED` booleans it
   replaced never did.

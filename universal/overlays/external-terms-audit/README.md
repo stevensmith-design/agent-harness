@@ -32,4 +32,3 @@ make harness-sync && make harness-check
 ```
 
 Then invoke `/harness-external-terms-audit` when the full audit is warranted.
-

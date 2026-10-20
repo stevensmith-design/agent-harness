@@ -36,9 +36,7 @@ if ! git rev-parse --git-dir >/dev/null 2>&1; then
   finish
 fi
 
-BASE=$(cfg main_branch main)
-RANGE="$BASE"
-git rev-parse --verify -q "$BASE" >/dev/null 2>&1 || RANGE="HEAD"
+RANGE=$(comparison_base) || exit 1
 CHANGED=$(git diff --name-only "$RANGE"...HEAD 2>/dev/null; git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null)
 CHANGED=$(printf '%s\n' "$CHANGED" | grep -e . -- | sort -u)
 
@@ -53,8 +51,12 @@ if [ "${n_content:-0}" -gt 0 ] && [ "$n_harness" -gt 0 ]; then
   # never expired before, so the second use onward was invisible — inside the
   # very mechanism whose header claims the escape hatch is impossible to use
   # invisibly.
-  if [ -n "$(find runs/.state/harness-change-declared -mmin -480 2>/dev/null)" ]; then
-    reason=$(cut -f3 runs/.state/harness-change-declared 2>/dev/null | head -1)
+  intent=runs/.state/harness-change-declared
+  current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+  intent_branch=$(sed -n 's/^branch=//p' "$intent" 2>/dev/null | head -1)
+  reason=$(sed -n 's/^reason=//p' "$intent" 2>/dev/null | head -1)
+  if [ -n "$(find "$intent" -mmin -480 2>/dev/null)" ] \
+     && [ -n "$reason" ] && [ "$current_branch" = "$intent_branch" ]; then
     pass "harness/content split overridden — declared: ${reason:-unstated}" \
          "$n_harness harness, ${n_content} content"
   else
