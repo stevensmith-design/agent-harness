@@ -145,7 +145,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - run: make harness-check
+      - name: Run harness governance
+        env:
+          PR_BODY: \${{ github.event.pull_request.body }}
+        run: make harness-check
 YAML
 
   # --- deploy.yml : one job per configured environment ---
