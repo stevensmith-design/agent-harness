@@ -79,6 +79,7 @@ rubrics/examples/README.md
 scripts/hooks/session-start.sh
 scripts/hooks/block-sensitive-runtime.sh
 scripts/hooks/guard-git-network.sh
+scripts/hooks/block-harness-write.sh
 scripts/hooks/pre-commit
 scripts/hooks/pre-push
 .claude/settings.json' 

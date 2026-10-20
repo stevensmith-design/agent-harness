@@ -385,18 +385,45 @@ harness_prefix() {
   printf '%s/' "${abs#"$top"/}"
 }
 
+# resolve_base_ref [explicit-ref] — print a verified comparison base. An
+# unresolved base is a policy failure, never an empty diff. GitHub PR checkouts
+# normally have origin/<base> but no local branch named <base>.
+resolve_base_ref() {
+  local explicit="${1:-}" configured candidate
+  configured="$(cfg git.main_branch main)"
+  if [ -n "$explicit" ]; then
+    for candidate in "$explicit" "origin/$explicit"; do
+      git -C "$HARNESS_ROOT" rev-parse --verify "${candidate}^{commit}" >/dev/null 2>&1 \
+        && { printf '%s\n' "$candidate"; return 0; }
+    done
+    fail "cannot establish the required comparison base '$explicit'. Fetch it (normally origin/$explicit) before running policy checks; refusing to treat an unresolved base as an empty diff."
+  fi
+  if [ -n "${GITHUB_BASE_REF:-}" ]; then
+    for candidate in "$GITHUB_BASE_REF" "origin/$GITHUB_BASE_REF"; do
+      git -C "$HARNESS_ROOT" rev-parse --verify "${candidate}^{commit}" >/dev/null 2>&1 \
+        && { printf '%s\n' "$candidate"; return 0; }
+    done
+    fail "GITHUB_BASE_REF is '$GITHUB_BASE_REF', but neither it nor origin/$GITHUB_BASE_REF resolves. Fetch the PR base before running policy checks."
+  fi
+  for candidate in "origin/$configured" "$configured"; do
+    git -C "$HARNESS_ROOT" rev-parse --verify "${candidate}^{commit}" >/dev/null 2>&1 \
+      && { printf '%s\n' "$candidate"; return 0; }
+  done
+  fail "cannot establish a comparison base: neither origin/$configured nor $configured resolves. Policy checks require a real base and will not substitute an empty diff."
+}
+
 # changed_files [base-ref] — harness-relative paths changed against the base.
 # Files outside the harness directory are dropped, and git's C-quoting of
 # non-ASCII paths is undone (a quoted path matches no glob, so an ordinary
 # source file with an accent in its name was being classified as harness code).
 changed_files() {
   local base="${1:-}" pfx raw
+  [ -n "$base" ] || base="$(resolve_base_ref)"
   pfx="$(harness_prefix)"
-  if [ -n "$base" ] && git -C "$HARNESS_ROOT" rev-parse --verify "$base" >/dev/null 2>&1; then
-    raw=$(git -C "$HARNESS_ROOT" -c core.quotepath=false diff --name-only "$base...HEAD" 2>/dev/null) || raw=""
-  else
-    raw=$(git -C "$HARNESS_ROOT" -c core.quotepath=false diff --name-only HEAD 2>/dev/null) || raw=""
-  fi
+  git -C "$HARNESS_ROOT" rev-parse --verify "${base}^{commit}" >/dev/null 2>&1 \
+    || fail "comparison base '$base' does not resolve; refusing to report an empty change set."
+  raw=$(git -C "$HARNESS_ROOT" -c core.quotepath=false diff --name-only "$base...HEAD") \
+    || fail "could not compare HEAD with '$base'; refusing to report an empty change set."
   printf '%s\n' "$raw" | while IFS= read -r f; do
     [ -n "$f" ] || continue
     case "$f" in \"*\") f="${f%\"}"; f="${f#\"}" ;; esac

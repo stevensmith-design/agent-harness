@@ -269,7 +269,7 @@ Three mechanisms, deliberately different in kind:
 
 This constrains the agent's tool calls. It is not a security control — an agent with shell access can edit anything. The target is drift and shortcut-taking, not an adversary.
 
-**What the core template ships:** mechanisms 2 and 3 — `scripts/gates/harness-content-split.sh` with deny-by-default classification, and `scripts/declare-harness-change.sh` as the override. Mechanism 1, the pre-write hook, is runtime-specific and belongs in the pack: it is a `PreToolUse` hook under Claude Code and has no equivalent in a workspace substrate.
+**What the core template ships:** mechanisms 1–3 for its included Claude Code substrate — `scripts/hooks/block-harness-write.sh`, `scripts/gates/harness-content-split.sh` with deny-by-default classification, and the operator-approved, branch-bound `scripts/declare-harness-change.sh` override. Other substrates must provide an equivalent approval/write boundary or state clearly that only the changed-file gate is available.
 
 ---
 

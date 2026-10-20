@@ -258,6 +258,13 @@ build_repo
 ./scripts/sub.sh 's/require_pinned_actions: warn/require_pinned_actions: error/' harness.config.yaml
 ./scripts/sub.sh 's|actions/checkout@[0-9a-f]\{40\}|actions/checkout@v4|' .github/workflows/gates.yml
 run fail "an action pinned to a mutable tag" ./scripts/gates/supply-chain.sh
+build_repo
+run pass "default install has no secret-bearing automatic AI review workflow" --expect "no-default-ai-review" \
+  bash -c '[ ! -e .github/workflows/agent-review.yml ] && ! grep -R -q -E "ANTHROPIC_API_KEY|OPENAI_API_KEY" .github/workflows && echo no-default-ai-review'
+run pass "governance checkout does not persist credentials" --expect "governance-checkout-hardened" \
+  bash -c 'grep -A3 "uses: actions/checkout@" .github/workflows/governance.yml | grep -q "persist-credentials: false" && echo governance-checkout-hardened'
+run pass "governance jsonschema dependency is deliberately pinned" --expect "jsonschema-pinned" \
+  bash -c 'grep -qF "jsonschema==4.23.0" .github/workflows/governance.yml && echo jsonschema-pinned'
 
 hdr "dependency-safety — installation is a trust change"
 build_repo
@@ -702,12 +709,31 @@ setup git switch -qc feat/somewhere-else && \
 run fail "a declaration made on another branch does not carry over" \
   env CI=1 ./scripts/gates/policy.sh main
 
+build_repo
+setup git update-ref refs/remotes/origin/main refs/heads/main
+setup git branch -D main
+setup bash -c 'printf "export const ci = true;\n" >> src/app.ts && git add src/app.ts && git commit -qm ci-shaped-change'
+run pass "GitHub PR checkout resolves GITHUB_BASE_REF through origin without a local main" \
+  --expect "surfaces touched: app" env GITHUB_BASE_REF=main ./scripts/gates/policy.sh
+run pass "protected paths also use the remote PR base when local main is absent" \
+  --expect "protected paths" env GITHUB_BASE_REF=main ./scripts/gates/protected-paths.sh
+run fail "an unresolved required base fails instead of becoming an empty diff" \
+  --expect "cannot establish the required comparison base" ./scripts/gates/policy.sh missing-base
+
+build_repo
+FRESH="$WORK/fresh-policy"
+setup bash -c "rm -rf '$FRESH' && mkdir -p '$FRESH' && cd '$FRESH' && git init -q -b main . && git config user.email t@t && git config user.name t && git commit -qm empty --allow-empty && git switch -qc feat/install"
+setup ./scripts/install.sh "$FRESH"
+setup bash -c "cd '$FRESH' && git add -A && git commit -qm install"
+run pass "a fresh harness-only installation is not a high-risk API change" --expect "fresh-install-not-high" \
+  bash -c "cd '$FRESH' && out=\$(./scripts/gates/policy.sh main 2>&1) && printf '%s' \"\$out\" | grep -qF 'risk: medium' && ! printf '%s' \"\$out\" | grep -qF 'risk: high' && echo fresh-install-not-high"
+
 hdr "approval vocabulary — a declaration is not an authentication"
 
-# scripts/declare-intent.sh proves a DECLARATION was made, not that a human made
-# it: any agent that can run repository scripts can author one, including the
-# agent whose change it authorises. The harness used to describe that as a human
-# approval. It now records a trust rung, and the one gate still described as
+# scripts/declare-intent.sh proves an operator-approved DECLARATION was made,
+# but does not authenticate the identity named in it. The harness used to
+# describe that claim as a human approval. It now records a trust rung, and the
+# one gate still described as
 # requiring an authenticated human — the governance validator's approval rule —
 # must reject a record that only claims to be one.
 build_repo
@@ -1417,6 +1443,19 @@ setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_
 setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git push origin --no-veri feat/demo\"}}' > \"$WORK/in-git-no-verify.json\""
 setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git push origin main\"}}' > \"$WORK/in-git-main.json\""
 setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"gh pr merge 42 --admin\"}}' > \"$WORK/in-gh-admin.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"gh api repos/example/project/git/refs\"}}' > \"$WORK/in-gh-api.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"gh repo view example/project\"}}' > \"$WORK/in-gh-other.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"gh pr view 42\"}}' > \"$WORK/in-gh-view.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git -C /tmp push origin feat/demo\"}}' > \"$WORK/in-git-cwd.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git -c core.hooksPath=/dev/null push origin feat/demo\"}}' > \"$WORK/in-git-config.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git push --force origin feat/demo\"}}' > \"$WORK/in-git-force.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git push origin feat/demo:main\"}}' > \"$WORK/in-git-refspec.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git status | head -1\"}}' > \"$WORK/in-git-local-pipe.json\""
+setup python3 -c 'import json, sys; json.dump({"session_id":"t","tool_name":"Bash","tool_input":{"command":"time sh -c \"make check | tee /tmp/check.log\""}}, open(sys.argv[1], "w"))' "$WORK/in-unrelated-wrapper.json"
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"printf x > AGENTS.md\"}}' > \"$WORK/in-protected-redirect.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"printf x > .harness-intent\"}}' > \"$WORK/in-intent-redirect.json\""
+setup bash -c "printf '%s' '{\"session_id\":\"t\",\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\".dependency-intent\",\"content\":\"branch=feat/selftest\"}}' > \"$WORK/in-dependency-intent-write.json\""
+setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"%s/agents.md\"}}' \"\$PWD\" > \"$WORK/in-protected-case.json\""
 setup ./scripts/sub.sh 's/sensitive_paths: \[\]/sensitive_paths: ["burrow.db", "burrow.db-*"]/' harness.config.yaml
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"sqlite3 burrow.db .dump\"}}' > \"$WORK/in-project-sensitive.json\""
 setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"%s/burrow.db-wal\"}}' \"\$PWD\" > \"$WORK/in-project-sensitive-read.json\""
@@ -1462,6 +1501,14 @@ run fail "block-protected stops an edit to AGENTS.md sent on stdin" --expect "Bl
   bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-protected.json\""
 run fail "block-protected also covers executable Git policy" --expect "Blocked: .githooks/pre-push" \
   bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-githook.json\""
+run fail "block-protected covers recognizable Bash redirection" --expect "Blocked: AGENTS.md" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-protected-redirect.json\""
+run fail "an agent cannot write its own harness intent" --expect "operator-controlled declaration" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-intent-redirect.json\""
+run fail "an agent cannot Write its own dependency intent" --expect "operator-controlled declaration" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-dependency-intent-write.json\""
+run fail "protected paths are case-normalized on macOS" --expect "Blocked: agents.md" \
+  bash -c 'if [ "$(uname -s)" = Darwin ]; then CLAUDE_PROJECT_DIR="$PWD" .claude/hooks/block-protected.sh < "'$WORK'/in-protected-case.json"; else echo "Blocked: agents.md (case-sensitive platform: fixture not applicable)" >&2; exit 2; fi'
 run pass "and lets a source edit through, even when its content quotes a protected path" \
   bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-source.json\""
 setup ./scripts/declare-intent.sh harness-edit "selftest: a declared harness change"
@@ -1470,6 +1517,19 @@ run pass "a declared intent on this branch unlocks it" \
 run pass "static settings leave protected-edit decisions to the unlockable hook" --expect "hook-owned" \
   bash -c "! grep -qF 'Edit(./AGENTS.md)' .claude/settings.json && echo hook-owned"
 setup ./scripts/declare-intent.sh --clear
+
+setup git worktree add -q -b feat/worktree "$PWD/.claude/worktrees/owned" main
+setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"%s/.claude/worktrees/owned/src/app.ts\"}}' \"\$PWD\" > \"$WORK/in-worktree-source.json\""
+setup bash -c "printf '{\"session_id\":\"t\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"%s/.claude/worktrees/owned/.claude/settings.json\"}}' \"\$PWD\" > \"$WORK/in-worktree-harness.json\""
+run pass "a product file inside an owned worktree is classified from that worktree root" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-worktree-source.json\""
+run fail "a real harness file inside an owned worktree remains protected" --expect "Blocked: .claude/settings.json" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-worktree-harness.json\""
+setup bash -c 'cd .claude/worktrees/owned && ./scripts/declare-intent.sh harness-edit "selftest worktree branch intent"'
+run pass "branch identity and intent are read from the target worktree" \
+  bash -c "CLAUDE_PROJECT_DIR=\"\$PWD\" .claude/hooks/block-protected.sh < \"$WORK/in-worktree-harness.json\""
+setup git worktree remove -f "$PWD/.claude/worktrees/owned"
+setup git branch -D feat/worktree
 
 run pass "network guard admits the routine fetch shape" \
   bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-fetch.json\""
@@ -1481,13 +1541,33 @@ run fail "network guard rejects a direct default-branch push" --expect "non-defa
   bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-main.json\""
 run fail "network guard rejects an admin merge" --expect "bypasses repository protections" \
   bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-gh-admin.json\""
+run fail "network guard denies gh api by default" --expect "not in the lifecycle allowlist" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-gh-api.json\""
+run fail "network guard denies other gh commands outside the allowlist" --expect "not in the lifecycle allowlist" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-gh-other.json\""
+run pass "network guard admits an approved read-only PR view" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-gh-view.json\""
+run fail "git -C cannot bypass network classification" --expect "global options are not permitted" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-cwd.json\""
+run fail "git -c cannot disable hooks for a network operation" --expect "global options are not permitted" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-config.json\""
+run fail "force pushes remain outside the lifecycle shapes" --expect "force options are refused" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-force.json\""
+run fail "push refspecs cannot redirect an owned branch to main" --expect "refspecs" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-refspec.json\""
+run pass "local read-only Git pipelines are outside the network guard" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-git-local-pipe.json\""
+run pass "unrelated wrappers may contain substitutions and pipes" \
+  bash -c "\"$SRC/.claude/hooks/guard-git-network.sh\" < \"$WORK/in-unrelated-wrapper.json\""
 run fail "pre-push rejects the actual default destination ref" --expect "direct updates to 'main'" \
   bash -c "printf 'refs/heads/feat/demo %040d refs/heads/main %040d\\n' 1 0 | \"$SRC/.githooks/pre-push\" origin local-test-remote"
 
 hdr "ownership-based Git and PR authority"
 build_repo
 run pass "routine branch pushes and PR merges use narrow shapes" --expect "ownership-authority" \
-  bash -c 'grep -qF "Bash(git fetch origin --prune)" .claude/settings.json && grep -qF "Bash(git push -u origin:*)" .claude/settings.json && grep -qF "Bash(gh pr merge:*)" .claude/settings.json && echo ownership-authority'
+  bash -c 'grep -qF "Bash(git fetch origin --prune)" .claude/settings.json && grep -qF "Bash(git push -u origin:*)" .claude/settings.json && grep -qF "Bash(gh pr merge * --merge --delete-branch)" .claude/settings.json && ! grep -qF "Bash(git worktree:*)" .claude/settings.json && ! grep -qF "Bash(gh pr merge:*)" .claude/settings.json && echo ownership-authority'
+run pass "intent declaration commands cross the approval boundary" --expect "intent-approval-boundary" \
+  bash -c 'grep -A30 '\''"ask"'\'' .claude/settings.json | grep -qF "Bash(./scripts/declare-intent.sh:*)" && grep -A30 '\''"ask"'\'' .claude/settings.json | grep -qF "Bash(./scripts/declare-dependency-change.sh:*)" && ! grep -A20 '\''"allow"'\'' .claude/settings.json | grep -qF "Bash(./scripts/:*)" && echo intent-approval-boundary'
 run pass "macOS Git and GitHub network commands use narrow sandbox exclusions" --expect "ssh-git-exclusions" \
   bash -c 'grep -qF '\''"git fetch origin --prune"'\'' .claude/settings.json && grep -qF '\''"gh pr merge *"'\'' .claude/settings.json && ! grep -qF '\''"gh *"'\'' .claude/settings.json && ! grep -qF '\''"git push *"'\'' .claude/settings.json && grep -qF '\''"github.com"'\'' .claude/settings.json && echo ssh-git-exclusions'
 run pass "network Git instructions preserve matchable command shapes" --expect "simple-git-network-commands" \

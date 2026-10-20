@@ -4,7 +4,7 @@ description: Open a pull request and drive it to mergeable — fill every requir
 license: MIT
 metadata:
   harness.tier: workflow
-allowed-tools: Read Glob Grep Edit Write Bash(git:*) Bash(gh pr:*) Bash(gh api:*) Bash(make:*) Bash(./scripts/:*)
+allowed-tools: Read Glob Grep Edit Write Bash(git:*) Bash(gh pr:*) Bash(make:*) Bash(./scripts/review-rounds.sh:*)
 ---
 
 # pr

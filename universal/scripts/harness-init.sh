@@ -222,6 +222,11 @@ set_cfg design enabled "$UI"
 set_cfg design tokens_path "$S/theme"
 [ "$LVL" = "L3" ] && set_cfg governance enabled true
 
+if [ "$UI" = "true" ] && [ ! -d "$HARNESS_ROOT/$S/theme" ]; then
+  warn "design.tokens_path will point to '$S/theme', which does not exist yet."
+  warn "    After initialization, point it at the real token directory or create the token layer with the UI design-system workflow. No product directory was created."
+fi
+
 # A dry run stops here, before AGENTS.md, rule removal and the generators —
 # every one of which used to run anyway and rewrite the tree it promised to
 # leave alone.

@@ -7,14 +7,17 @@
       "Bash(git status)", "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)",
       "Bash(git add:*)", "Bash(git commit:*)", "Bash(git checkout -b:*)", "Bash(git switch:*)",
       "Bash(git fetch origin --prune)", "Bash(git fetch --prune origin)", "Bash(git pull --ff-only origin:*)",
-      "Bash(git push -u origin:*)", "Bash(git push origin:*)", "Bash(git branch -d:*)", "Bash(git worktree:*)",
-      "Bash(gh pr create:*)", "Bash(gh pr view:*)", "Bash(gh pr checks:*)", "Bash(gh pr update-branch:*)", "Bash(gh pr merge:*)"
+      "Bash(git push -u origin:*)", "Bash(git push origin:*)", "Bash(git branch -d:*)",
+      "Bash(git worktree list)", "Bash(git worktree add:*)", "Bash(git worktree remove:*)", "Bash(git worktree prune)",
+      "Bash(gh pr create:*)", "Bash(gh pr view:*)", "Bash(gh pr checks:*)", "Bash(gh pr update-branch:*)",
+      "Bash(gh pr merge * --merge --delete-branch)", "Bash(gh pr merge * --squash --delete-branch)"
     ],
     "ask": [
       "Bash(npm install:*)", "Bash(npm i:*)", "Bash(npm add:*)", "Bash(npm update:*)",
       "Bash(pnpm install:*)", "Bash(pnpm add:*)", "Bash(pnpm update:*)",
       "Bash(yarn install:*)", "Bash(yarn add:*)", "Bash(yarn up:*)",
-      "Bash(bun install:*)", "Bash(bun add:*)", "Bash(pip install:*)", "Bash(pip3 install:*)"
+      "Bash(bun install:*)", "Bash(bun add:*)", "Bash(pip install:*)", "Bash(pip3 install:*)",
+      "Bash(./scripts/declare-harness-change.sh:*)"
     ],
     "deny": [
       "Read(./.env)", "Read(./.env.local)", "Read(./.env.production)", "Read(./.env.development)", "Read(./.env.test)", "Read(./.env.staging)",
@@ -65,6 +68,17 @@
             "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/guard-git-network.sh\"",
             "timeout": 15,
             "statusMessage": "Checking repository network command..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/scripts/hooks/block-harness-write.sh\"",
+            "timeout": 15,
+            "statusMessage": "Checking harness write boundary..."
           }
         ]
       }

@@ -111,6 +111,13 @@ if [ -n "$unfilled" ]; then
 else
   ok "harness configured"
 fi
+if [ "$(cfg design.enabled false)" = "true" ]; then
+  token_dir="$(cfg design.tokens_path src/theme)"
+  if [ ! -d "$HARNESS_ROOT/$token_dir" ]; then
+    warn "design.tokens_path points to '$token_dir', but that directory does not exist"
+    info "    Point it at the real token directory, or create the token layer with the UI design-system workflow."
+  fi
+fi
 [ -f "$HARNESS_ROOT/.mcp.json" ] && ok ".mcp.json present" \
   || info "no .mcp.json — copy .mcp.json.example if this project needs MCP servers"
 

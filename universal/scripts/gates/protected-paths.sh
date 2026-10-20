@@ -4,10 +4,9 @@
 # harness gets quietly relaxed to make a red gate go green.
 . "$(dirname "$0")/../lib.sh"
 
-# The configured main branch, not a literal `main`: a repository whose default is
-# `master` otherwise never has a base ref here, and this gate reports a skip forever.
-BASE="${1:-${GITHUB_BASE_REF:-origin/$(cfg git.main_branch main)}}"
-git -C "$HARNESS_ROOT" rev-parse --verify "$BASE" >/dev/null 2>&1 || { ok "protected paths (no base ref '$BASE')"; exit 0; }
+# Resolve GitHub PR bases through origin/<base>; never turn a missing local main
+# branch into a passing empty comparison.
+BASE=$(resolve_base_ref "${1:-}")
 
 # changed_files(): repo-relative -> harness-relative, C-quoting undone. A
 # harness installed in a monorepo subdirectory saw `packages/app/...` on every

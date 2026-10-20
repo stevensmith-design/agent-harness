@@ -5,7 +5,7 @@ license: MIT
 metadata:
   harness.tier: implementation
   harness.destructive: "true"
-allowed-tools: Read Glob Grep Write Edit Bash(make:*) Bash(./scripts/:*) Bash(git:*)
+allowed-tools: Read Glob Grep Write Edit Bash(make:*) Bash(./scripts/emit-evidence.sh:*) Bash(git:*)
 ---
 
 # migration

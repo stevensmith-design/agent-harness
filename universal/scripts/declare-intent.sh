@@ -13,10 +13,10 @@
 #
 # WHAT THIS DOES NOT DO — read this before calling it an approval.
 #
-# It proves a DECLARATION WAS MADE. It does not prove a human made it. Any agent
-# that can run repository scripts can author one, including this one, including
-# the agent whose change the declaration is authorising. There is no identity
-# here to check and no signature to verify.
+# It proves a DECLARATION WAS MADE after the runtime crossed an explicit
+# operator-approval boundary. Direct Edit, Write and recognizable Bash writes
+# to the declaration are blocked. It still does not cryptographically prove an
+# identity: there is no signature here to verify.
 #
 # So every record it writes is stamped `trust=self_reported`, the weakest rung
 # of the evidence vocabulary in .harness/schemas/shared-definitions.schema.json,

@@ -87,9 +87,17 @@ surfaces:
     risk: high          # high risk => human approval required before merge
     level: L3
   - id: api
-    paths: ["src/api/**", "src/routes/**", "server/**", "app/api/**", "docs/api-proposal/**"]
-    risk: high          # a contract other people depend on
+    paths: ["src/api/**", "src/routes/**", "server/**", "app/api/**"]
+    risk: high          # executable API implementation
     level: L2
+  - id: api-contract
+    paths: ["docs/api-proposal/*.yaml", "docs/api-proposal/*.yml", "docs/api-proposal/*.json"]
+    risk: high          # accepted machine-readable contracts other people depend on
+    level: L2
+  - id: api-guidance
+    paths: ["docs/api-proposal/*.md"]
+    risk: low           # shipped instructions/templates are documentation, not an API change
+    level: L1
   - id: data
     paths: ["migrations/**", "db/**", "prisma/**", "src/**/repositories/**", "alembic/**"]
     risk: high          # the only changes with no undo

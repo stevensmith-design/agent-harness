@@ -4,7 +4,7 @@ description: Manage the requirement register — propose, accept, reject, reprio
 license: MIT
 metadata:
   harness.tier: product
-allowed-tools: Read Glob Grep Write Edit Bash(git:*) Bash(make:*) Bash(./scripts/:*) Bash(gh pr:*)
+allowed-tools: Read Glob Grep Write Edit Bash(git:*) Bash(make:*) Bash(gh pr:*)
 ---
 
 # requirements

@@ -4,7 +4,7 @@ description: Build or change the CI/CD pipeline — wire a stack's toolchain, ad
 license: MIT
 metadata:
   harness.tier: install
-allowed-tools: Read Glob Grep Edit Write Bash(make:*) Bash(./scripts/:*) Bash(git:*) Bash(gh:*)
+allowed-tools: Read Glob Grep Edit Write Bash(make:*) Bash(./scripts/deploy.sh:*) Bash(git:*) Bash(gh pr:*)
 ---
 
 # pipeline
