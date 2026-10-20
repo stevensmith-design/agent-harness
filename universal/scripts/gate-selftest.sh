@@ -265,6 +265,8 @@ run pass "governance checkout does not persist credentials" --expect "governance
   bash -c 'grep -A3 "uses: actions/checkout@" .github/workflows/governance.yml | grep -q "persist-credentials: false" && echo governance-checkout-hardened'
 run pass "governance jsonschema dependency is deliberately pinned" --expect "jsonschema-pinned" \
   bash -c 'grep -qF "jsonschema==4.23.0" .github/workflows/governance.yml && echo jsonschema-pinned'
+run pass "harness CI supplies the PR body to protected-path governance" --expect "pr-body-wired" \
+  bash -c 'grep -A3 -F "name: Run harness governance" .github/workflows/harness.yml | grep -qF '\''PR_BODY: ${{ github.event.pull_request.body }}'\'' && echo pr-body-wired'
 
 hdr "dependency-safety — installation is a trust change"
 build_repo
