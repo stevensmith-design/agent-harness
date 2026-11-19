@@ -1,8 +1,10 @@
-# Harness Lab
+# Agent Harness
 
 <p align="center"><img src="assets/harness.jpg" alt="A climber on a rope and harness, while small workers build the wall beside them" width="720"></p>
 
 Two agent harnesses, free to use.
+
+Made by Steven Smith. More on both, and the rest of my work: [stevensmith.dev](https://stevensmith.dev)
 
 A harness is everything around the model: the context, rules, procedures,
 contracts, gates, evidence and feedback loops that make AI work inside one
@@ -27,7 +29,7 @@ Slack or Notion you already have, and it designs a harness that fits that.
 Not sure? If the work lives in a code repository, start with the universal
 harness. For everything else, start with the kit.
 
-| | **Universal harness** — [`universal/`](universal/) | **Harness starter kit** — [`kit/`](kit/) |
+| | **Universal harness** — [`universal/`](universal/) | **Harness kit** — [`kit/`](kit/) |
 |---|---|---|
 | **What it is** | A complete, ready-to-install harness for software projects, on any stack | A *constructor* that designs and builds a harness around your own team or workspace |
 | **Use it when** | You are building software and want a working harness in your repo today | Your work is not (only) software — design, marketing, business development — or you want a harness shaped around how your team already works |
@@ -37,6 +39,31 @@ harness. For everything else, start with the kit.
 The two are kept apart on purpose. The kit is not a harness; it is the thing that
 builds them, so the assumptions of one project do not travel into the next. The
 kit's dev pack uses the universal harness as its reference implementation.
+
+### What it looks like
+
+Real output from `make check` in a made-up, empty sample project, straight after installing the
+universal harness. Lint and tests aren't set up yet, so it won't call the work done:
+
+```text
+! TODO: lint — not implemented in adapter 'generic'
+! TODO: format --check — not implemented in adapter 'generic'
+! TODO: typecheck — not implemented in adapter 'generic'
+! TODO: test — not implemented in adapter 'generic'
+✓ secret scan
+✓ design tokens
+• no tokens.json yet — run the 'ui-design-system' skill to create one
+•   (set design.require_tokens: true once it exists, to gate on it)
+✓ design system (no token file to check)
+✓ harness gates passed
+! but this run did not actually check your code:
+    lint
+    format --check
+    typecheck
+    test
+!   Fill these in in scripts/adapters/generic.sh before you trust a green run.
+? NOT VERIFIED — make check ran over unimplemented adapter verbs. Work can continue; it cannot be called done
+```
 
 ## Get them
 
