@@ -68,6 +68,23 @@ universal harness. Lint and tests aren't set up yet, so it won't call the work d
 ? NOT VERIFIED — make check ran over unimplemented adapter verbs. Work can continue; it cannot be called done
 ```
 
+The same sample once it has a small Python app and real lint, type-check and test commands
+(ruff, mypy and pytest), told to skip the harness's own folders. Now it passes:
+
+```text
+All checks passed!
+61 files already formatted
+Success: no issues found in 4 source files
+..                                                                       [100%]
+2 passed in 0.01s
+✓ secret scan
+✓ design tokens
+• no tokens.json yet — run the 'ui-design-system' skill to create one
+•   (set design.require_tokens: true once it exists, to gate on it)
+✓ design system (no token file to check)
+✓ all deterministic gates passed
+```
+
 ## Get them
 
 **You need:** `bash`, `git` and `make` (macOS or Linux; on Windows, use WSL).
