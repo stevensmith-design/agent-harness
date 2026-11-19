@@ -4,7 +4,7 @@
 
 Two agent harnesses, free to use.
 
-Made by Steven Smith. More on both, and the rest of my work: [stevensmith.dev](https://stevensmith.dev)
+Made by Steven Smith. More on both, and the rest of my work: [stevensmith.dev](https://stevensmith.dev?utm_source=github&utm_campaign=agent-harness)
 
 A harness is everything around the model: the context, rules, procedures,
 contracts, gates, evidence and feedback loops that make AI work inside one
