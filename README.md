@@ -29,6 +29,9 @@ Slack or Notion you already have, and it designs a harness that fits that.
 Not sure? If the work lives in a code repository, start with the universal
 harness. For everything else, start with the kit.
 
+Quickest start: `git clone https://github.com/stevensmith-design/agent-harness.git`, then open
+[`universal/README.md`](universal/README.md) or [`kit/README.md`](kit/README.md) and follow its first step.
+
 | | **Universal harness** — [`universal/`](universal/) | **Harness kit** — [`kit/`](kit/) |
 |---|---|---|
 | **What it is** | A complete, ready-to-install harness for software projects, on any stack | A *constructor* that designs and builds a harness around your own team or workspace |
