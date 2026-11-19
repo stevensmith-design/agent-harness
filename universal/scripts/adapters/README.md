@@ -31,6 +31,14 @@ real command or the reason for absence is known.
 | `build` | production build | |
 | `verify` | prove the app actually starts/serves | the evidence recipe |
 
+## Check the project, not the harness
+
+The harness installs its own scripts into the project root, so a tool pointed
+at `.` lints them as if the project had written them. Point tools at
+`project_targets <ext...>` from `lib.sh` (the project's top-level code without
+the harness's folders), or rely on an ignore file the harness ships, as the
+Prettier adapters do with `.prettierignore`.
+
 ## Writing a new adapter
 
 Copy `generic.sh`, fill in the verbs, save as `<name>.sh`, set

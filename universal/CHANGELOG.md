@@ -200,12 +200,37 @@ not run, or ran over a stub).
 - **Skill links.** `verify-harness` names every skill missing from
   `.claude/skills/` (`harness-wrapup` was).
 
+### Adapters check the project's code, not the harness's
+
+- **python-api** ran `ruff check .`, `ruff format --check .` and `mypy .`, so
+  a fresh install failed `make check` on the harness's own scripts (51 ruff
+  findings and 9 unformatted files with ruff 0.8, none in `src/` or `tests/`).
+  Lint, format and typecheck now name the project's top-level code instead:
+  every root directory holding Python, except the harness's own (`scripts/`,
+  `.agents/`, `.claude/`, `.cursor/`, `.githooks/`, `.harness/`, `evals/`,
+  `overlays/`), plus root `*.py` files. The list lives in `project_targets`
+  in `lib.sh`. `--force-exclude` keeps the project's own ruff `exclude`. A
+  project with no code yet is NOT VERIFIED, not a pass over nothing.
+- **python-api typecheck** falls back to pyright only when mypy is absent.
+  It used to run pyright whenever mypy found errors, and hid mypy's report.
+- **node-api, react-web, react-native** already left the harness to
+  `.prettierignore`, but it missed `CHANGELOG.md` and `overlays/`, so
+  `prettier --check .` failed a fresh install on two harness files. Both are
+  now listed. `flutter` needed no change: the harness ships no Dart.
+- `gate-selftest` installs into a fresh repo with python-api and proves that a
+  clean `src/` passes lint, format and typecheck while a planted lint error in
+  `src/` still fails. Without ruff, mypy and pytest it reports the case as
+  not tested, and as NOT VERIFIED when the repo itself uses python-api.
+
 ### For installed repos
 
 Copy the changed scripts, `sweep-guard.sh`, both workflows and the evidence
 schema; run `make link-skills` and `make harness-sync`. CI that ran the
 self-test without Playwright while listing pages in `render-pages.txt` now
 fails — install Playwright in that job, or it was never testing the audit.
+For the adapter fix, copy `scripts/lib.sh`, `scripts/adapters/python-api.sh`
+and `scripts/gate-selftest.sh`, and add `CHANGELOG.md` and `overlays/` to your
+`.prettierignore`.
 
 ## 1.16.0 — the learning loop
 
