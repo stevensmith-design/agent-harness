@@ -730,6 +730,47 @@ setup bash -c "cd '$FRESH' && git add -A && git commit -qm install"
 run pass "a fresh harness-only installation is not a high-risk API change" --expect "fresh-install-not-high" \
   bash -c "cd '$FRESH' && out=\$(./scripts/gates/policy.sh main 2>&1) && printf '%s' \"\$out\" | grep -qF 'risk: medium' && ! printf '%s' \"\$out\" | grep -qF 'risk: high' && echo fresh-install-not-high"
 
+hdr "stack adapters check the project's code, not the harness's"
+
+# python-api ran `ruff check .`, `ruff format --check .` and `mypy .`, so a
+# fresh install failed lint with dozens of findings in scripts/ before the
+# project had written a line of its own. The adapter now names the project's
+# top-level code (project_targets in lib.sh) instead of ".". This proves both
+# halves: a clean src/ passes, and a planted error in src/ still fails — a scope
+# that excluded everything would pass the first case and fail the second.
+if command -v ruff >/dev/null 2>&1 && python3 -m mypy --version >/dev/null 2>&1 \
+   && python3 -m pytest --version >/dev/null 2>&1; then
+  build_repo
+  PYF="$WORK/fresh-python"
+  setup bash -c 'rm -rf "$1" && mkdir -p "$1" && cd "$1" && git init -q -b main . && git config user.email t@t && git config user.name t && git commit -qm empty --allow-empty' _ "$PYF"
+  setup ./scripts/install.sh "$PYF"
+  setup bash -c 'cd "$1" && ./scripts/sub.sh "s/^  adapter: .*/  adapter: python-api/" harness.config.yaml && rm -f harness.config.yaml.bak && grep -q "^  adapter: python-api$" harness.config.yaml' _ "$PYF"
+  setup bash -c 'cd "$1" && mkdir -p src tests && : > src/__init__.py && printf "def add(a: int, b: int) -> int:\n    return a + b\n" > src/calc.py && printf "from src.calc import add\n\n\ndef test_add() -> None:\n    assert add(1, 2) == 3\n" > tests/test_calc.py' _ "$PYF"
+  # Without the harness's own Python in the install, the cases below would pass
+  # for the wrong reason: there would be nothing to exclude.
+  run pass "the install carries the harness's own Python, so there is something to exclude" \
+    bash -c 'cd "$1" && [ -f scripts/validate-tokens.py ] && [ -f .harness/scripts/validate_governance.py ]' _ "$PYF"
+  run pass "python-api lint passes a fresh install with a clean src/" --expect "All checks passed" \
+    env -u CI -u HARNESS_STRICT bash -c 'cd "$1" && ./scripts/run.sh lint' _ "$PYF"
+  run pass "python-api format-check passes it" --expect "already formatted" \
+    env -u CI -u HARNESS_STRICT bash -c 'cd "$1" && ./scripts/run.sh format_check' _ "$PYF"
+  run pass "python-api typecheck passes it" --expect "Success: no issues" \
+    env -u CI -u HARNESS_STRICT bash -c 'cd "$1" && ./scripts/run.sh typecheck' _ "$PYF"
+  setup bash -c 'cd "$1" && printf "import os\n" >> src/calc.py' _ "$PYF"
+  run fail "a lint error planted in src/ still fails" --expect "F401" \
+    env -u CI -u HARNESS_STRICT bash -c 'cd "$1" && ./scripts/run.sh lint' _ "$PYF"
+  setup bash -c 'cd "$1" && rm -rf src tests' _ "$PYF"
+  run pass "with no project code, lint is NOT VERIFIED rather than a pass over nothing" \
+    --expect "no project code found" \
+    env -u CI -u HARNESS_STRICT bash -c 'cd "$1" && rm -f .agents/runs/.stubs && ./scripts/run.sh lint' _ "$PYF"
+elif grep -qE '^[[:space:]]+adapter:[[:space:]]*python-api' "$SRC/harness.config.yaml"; then
+  # This repo uses the adapter, so its self-test is owed.
+  notrun=$((notrun+1))
+  printf '  \033[33m?\033[0m python-api scope NOT VERIFIED: ruff, mypy and pytest are needed on PATH / in python3\n'
+else
+  printf '  \033[36m•\033[0m python-api scope not tested here: ruff, mypy and pytest are not available, and this repo does not use the adapter\n'
+fi
+
 hdr "approval vocabulary — a declaration is not an authentication"
 
 # scripts/declare-intent.sh proves an operator-approved DECLARATION was made,

@@ -353,6 +353,42 @@ run_verb() {
   fi
 }
 
+# --- Project code, not harness code ----------------------------------------------
+# The harness installs its own scripts and tooling into the project root. A stack
+# tool pointed at "." checks them as if the project had written them, and a fresh
+# install then fails lint on files the project neither wrote nor should edit.
+# Adapters scope their tools with project_targets instead. Prettier-based
+# adapters get the same exclusions from the shipped .prettierignore, which also
+# covers the harness's non-code files; a harness directory added to one belongs
+# in the other.
+HARNESS_OWNED_DIRS=(scripts .agents .claude .cursor .githooks .harness evals overlays)
+
+# project_targets <ext...> — the top-level entries that hold the project's own
+# code, one per line: each root directory, other than a harness-owned one, that
+# contains a file with one of the given extensions, plus the root files that have
+# one. Directories without such a file are left out because some tools (mypy)
+# refuse a named directory with nothing in it to check. Hidden entries (.git,
+# .venv, tool caches) are skipped, as `tool .` would mostly skip them anyway.
+# Empty output means there is no project code yet — callers must not fall back
+# to ".".
+project_targets() {
+  local e name owned ext
+  [ $# -gt 0 ] || fail "project_targets: name at least one file extension"
+  local find_args=() ; for ext in "$@"; do find_args+=(${find_args[0]+-o} -name "*.$ext"); done
+  for e in "$HARNESS_ROOT"/*; do
+    [ -e "$e" ] || continue
+    name="${e##*/}"
+    if [ -d "$e" ]; then
+      for owned in "${HARNESS_OWNED_DIRS[@]}"; do [ "$name" = "$owned" ] && continue 2; done
+      [ -n "$(find "$e" -type f \( "${find_args[@]}" \) -print -quit 2>/dev/null)" ] && printf '%s\n' "$name"
+    else
+      for ext in "$@"; do
+        case "$name" in *."$ext") printf '%s\n' "$name"; break ;; esac
+      done
+    fi
+  done
+}
+
 # --- Path helpers --------------------------------------------------------------
 # One implementation of glob → anchored POSIX ERE, used by every gate that reads
 # a `paths:` list. There used to be two copies; they were already drifting.

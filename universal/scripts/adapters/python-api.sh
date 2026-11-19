@@ -16,10 +16,26 @@ cmd_deps() {
 }
 cmd_dev()          { _py uvicorn app.main:app --reload; }
 cmd_dev_mock()     { MOCK_MODE=true cmd_dev; }
-cmd_lint()         { if _has ruff; then ruff check .; else _py ruff check .; fi; }
-cmd_format()       { if _has ruff; then ruff format .; else _py ruff format .; fi; }
-cmd_format_check() { if _has ruff; then ruff format --check .; else _py ruff format --check .; fi; }
-cmd_typecheck()    { _py mypy . 2>/dev/null || _py pyright; }
+# Lint, format and type-check the project's code, never the harness's own
+# scripts (see project_targets in lib.sh). `ruff check .` on a fresh install
+# failed with ~85 findings, every one in scripts/. --force-exclude keeps the
+# project's own ruff `exclude` (and ruff's defaults) applying to the named paths.
+# No targets means no code yet: say so, rather than fall back to ".".
+_targets() {
+  TARGETS=()
+  local t; while IFS= read -r t; do TARGETS+=("$t"); done < <(project_targets py pyi)
+  [ "${#TARGETS[@]}" -gt 0 ] || { todo "$1 — no project code found outside the harness's own folders"; return 1; }
+}
+_ruff() { if _has ruff; then ruff "$@"; else _py ruff "$@"; fi; }
+cmd_lint()         { _targets lint         || return 0; _ruff check --force-exclude "${TARGETS[@]}"; }
+cmd_format()       { _targets format       || return 0; _ruff format --force-exclude "${TARGETS[@]}"; }
+cmd_format_check() { _targets format_check || return 0; _ruff format --check --force-exclude "${TARGETS[@]}"; }
+cmd_typecheck() {
+  _targets typecheck || return 0
+  # pyright only when mypy is absent. The old `mypy … 2>/dev/null || pyright`
+  # also ran pyright whenever mypy FOUND errors, and hid mypy's report.
+  if _py mypy --version >/dev/null 2>&1; then _py mypy "${TARGETS[@]}"; else _py pyright "${TARGETS[@]}"; fi
+}
 cmd_test()         { _py pytest -q; }
 cmd_coverage()     { _py pytest --cov -q; }
 
