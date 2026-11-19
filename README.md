@@ -69,11 +69,11 @@ universal harness. Lint and tests aren't set up yet, so it won't call the work d
 ```
 
 The same sample once it has a small Python app and real lint, type-check and test commands
-(ruff, mypy and pytest), told to skip the harness's own folders. Now it passes:
+(ruff, mypy and pytest), with no extra config. Now it passes:
 
 ```text
 All checks passed!
-61 files already formatted
+4 files already formatted
 Success: no issues found in 4 source files
 ..                                                                       [100%]
 2 passed in 0.01s
