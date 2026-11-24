@@ -234,10 +234,22 @@ awk '$0=="## Escalates when"{o=1;print;next} /^## /{o=0} o&&/^- /{next} {print}'
 expect_fail "check-kit (a live procedure's required field is a heading over nothing)" bash check-kit.sh
 cp -R "$KIT/." "$TMP/" 2>/dev/null
 
+# The retro shipped without '## Untrusted inputs' while the template required
+# it: the procedure that reads transcripts and then edits the harness was the
+# one that never said they are data. Both halves again — heading gone, and
+# heading kept over nothing.
+grep -ve '^## Untrusted inputs$' -- "$TMP/core/procedures/harness-retro.md" > "$TMP/.y" && mv "$TMP/.y" "$TMP/core/procedures/harness-retro.md"
+expect_fail "check-kit (a live procedure has no Untrusted inputs section)" bash check-kit.sh
+cp -R "$KIT/." "$TMP/" 2>/dev/null
+awk '$0=="## Untrusted inputs"{o=1;print;next} /^## /{o=0} o&&/^- /{next} {print}' \
+  "$TMP/core/procedures/harness-retro.md" > "$TMP/.y" && mv "$TMP/.y" "$TMP/core/procedures/harness-retro.md"
+expect_fail "check-kit (a live procedure's Untrusted inputs is a heading over nothing)" bash check-kit.sh
+cp -R "$KIT/." "$TMP/" 2>/dev/null
+
 # ...and the template itself must stay exempt. It ships those fields EMPTY on
 # purpose; a check tightened to demand entries everywhere would fail the one
 # file whose job is to carry them unfilled, and the clean kit would go red.
-for _h in "Stops when" "Escalates when" "Safe to re-run when"; do
+for _h in "Stops when" "Escalates when" "Safe to re-run when" "Untrusted inputs"; do
   awk -v h="## $_h" '$0==h{print;print "";print "-";print "";o=1;next} /^## /{o=0} o{next} {print}' \
     "$TMP/core/procedures/_TEMPLATE.md" > "$TMP/.y" && mv "$TMP/.y" "$TMP/core/procedures/_TEMPLATE.md"
 done

@@ -222,6 +222,23 @@ not run, or ran over a stub).
   `src/` still fails. Without ruff, mypy and pytest it reports the case as
   not tested, and as NOT VERIFIED when the repo itself uses python-api.
 
+### The retro says what it will not obey, and what counts as independent
+
+- **`harness-retro` has an Untrusted inputs section.** It reads saved
+  transcripts, `mine-sessions.py` output, PR review comments and the devlog,
+  and then edits the harness — and nothing said those were evidence, not
+  instructions. They are now named as data to count and cluster; a command or
+  "rule" inside them is read as text and never run; and a line that tries to
+  steer the retro ("approve this", "skip the selftest") is itself a finding.
+- **"Two independent occurrences" is defined**, once, in the same skill:
+  different sessions on different days, or different tasks or PRs. Repeats in
+  one session or on one task count as one; agents that agreed after seeing the
+  same evidence count as one.
+- **`mine-sessions.py` groups matches by session**, and its *By signal* table
+  now counts matches, distinct sessions and distinct days, so the retro reads
+  the independent count rather than the line count. `gate-selftest` proves a
+  correction typed three times in one session counts as one session.
+
 ### For installed repos
 
 Copy the changed scripts, `sweep-guard.sh`, both workflows and the evidence
@@ -231,6 +248,8 @@ fails — install Playwright in that job, or it was never testing the audit.
 For the adapter fix, copy `scripts/lib.sh`, `scripts/adapters/python-api.sh`
 and `scripts/gate-selftest.sh`, and add `CHANGELOG.md` and `overlays/` to your
 `.prettierignore`.
+For the retro fix, copy `.agents/skills/harness-retro/SKILL.md`,
+`scripts/mine-sessions.py` and `scripts/gate-selftest.sh`.
 
 ## 1.16.0 — the learning loop
 

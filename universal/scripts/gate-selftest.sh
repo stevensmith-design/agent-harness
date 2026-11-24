@@ -1440,6 +1440,19 @@ setup bash -c "{
 } > \"$WORK/tx/s.jsonl\""
 run pass "mine-sessions keeps only what the person typed" \
   bash -c "out=\$(python3 scripts/mine-sessions.py --dir \"$WORK/tx\" --since 2030-01-01) && printf '%s' \"\$out\" | grep -q -e PERSONWORDS -- && ! printf '%s' \"\$out\" | grep -q -E -e 'AGENTWORDS|TOOLWORDS' --"
+# One correction typed three times in one session is one occurrence, not three:
+# the output groups by session and counts distinct sessions per signal.
+setup mkdir -p "$WORK/tx2"
+setup bash -c "{
+  printf '%s\n' '{\"type\":\"user\",\"timestamp\":\"2030-01-02T00:00:01Z\",\"message\":{\"content\":\"you used the old template again\"}}'
+  printf '%s\n' '{\"type\":\"user\",\"timestamp\":\"2030-01-02T00:00:02Z\",\"message\":{\"content\":\"again, the old template\"}}'
+  printf '%s\n' '{\"type\":\"user\",\"timestamp\":\"2030-01-02T00:00:03Z\",\"message\":{\"content\":\"no, again the old template\"}}'
+} > \"$WORK/tx2/aaaaaaaa.jsonl\"
+printf '%s\n' '{\"type\":\"user\",\"timestamp\":\"2030-01-05T00:00:01Z\",\"message\":{\"content\":\"the old template again\"}}' > \"$WORK/tx2/bbbbbbbb.jsonl\""
+run pass "mine-sessions counts repeats in one session once: 4 matches, 2 sessions" --expect "4 matches    2 session(s)    2 day(s)" \
+  python3 scripts/mine-sessions.py --dir "$WORK/tx2" --since 2030-01-01
+run pass "and groups the matches under their session" --expect "Session aaaaaaaa  2030-01-02  3 match(es)" \
+  python3 scripts/mine-sessions.py --dir "$WORK/tx2" --since 2030-01-01
 setup rm -f "$WORK/tx/s.jsonl"
 run fail "and an empty transcript folder is not a clean result" --expect "not a clean result" \
   python3 scripts/mine-sessions.py --dir "$WORK/tx"

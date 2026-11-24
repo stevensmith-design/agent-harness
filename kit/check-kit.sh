@@ -271,11 +271,17 @@ if [ "$n_leak" -eq 0 ]; then
   pass "nothing points at what a reader cannot see" "$src"
 fi
 
-# ── 8. Every procedure says how it stops, escalates and re-enters ────────────
+# ── 8. Every procedure says how it stops, escalates, re-enters, and what it
+#       will not obey ─────────────────────────────────────────────────────────
 # A procedure that documents only the happy path leaves the agent to improvise
 # the case that goes wrong — and an improvised stop is indistinguishable from
 # finishing. Those three are exactly what a new workflow step owes: a stop, an
 # escalation, and a re-entry.
+#
+# The fourth, Untrusted inputs, is the one the template asked for and nothing
+# read: the retro — which reads transcripts and review comments and then edits
+# the harness — shipped without it. A procedure that ingests outside text and
+# does not say it is data will, sooner or later, follow it.
 #
 # The fields are READ HERE, in the change that added them to the template. A
 # required field nothing reads is the defect at the bottom of PRINCIPLES.md:
@@ -291,10 +297,14 @@ n_proc=0; n_field=0; n_badproc=0
 for f in core/procedures/*.md; do
   [ -f "$f" ] || continue
   n_proc=$((n_proc + 1)); bad=0
-  for h in "Stops when" "Escalates when" "Safe to re-run when"; do
+  for h in "Stops when" "Escalates when" "Safe to re-run when" "Untrusted inputs"; do
     n_field=$((n_field + 1))
     if ! grep -qxe "## $h" -- "$f"; then
-      fail "$f has no '## $h' section — a procedure that names no such condition still has one, and it is 'carry on'"
+      case "$h" in
+        "Untrusted inputs") why="a procedure that names no untrusted input still reads some, and obeys whatever it read last" ;;
+        *) why="a procedure that names no such condition still has one, and it is 'carry on'" ;;
+      esac
+      fail "$f has no '## $h' section — $why"
       bad=1; continue
     fi
     [ "$f" = "$PROC_TMPL" ] && continue
@@ -307,7 +317,7 @@ done
 if [ "$n_proc" -eq 0 ]; then
   fail "no procedures under core/procedures/ — an empty denominator is not a pass"
 elif [ "$n_badproc" -eq 0 ]; then
-  pass "every procedure says how it stops, escalates and re-enters" "$n_proc procedures, $n_field fields"
+  pass "every procedure says how it stops, escalates, re-enters and what it will not obey" "$n_proc procedures, $n_field fields"
 fi
 
 pass "computed facts" "$N_KIT_CASES kit cases, $N_GATES gates, $N_KEYS keys, v$VER"

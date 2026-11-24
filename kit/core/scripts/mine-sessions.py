@@ -126,7 +126,17 @@ def corrections(recs, a):
     sigs = signals()
     n_msgs = 0
     sessions = set()
-    hits, by_signal = [], {}
+    hits = []
+    by_signal = {}                   # label -> [matches, set(sessions), set(days)]
+
+    def hit(day, sess, label, snip):
+        hits.append((day, sess, label, snip))
+        row = by_signal.setdefault(label, [0, set(), set()])
+        row[0] += 1
+        row[1].add(sess)
+        if day:
+            row[2].add(day)
+
     for sess, day, rec in recs:
         text = human_text(rec)
         if text is None:
@@ -134,29 +144,43 @@ def corrections(recs, a):
         n_msgs += 1
         sessions.add(sess)
         if text.startswith("[Request interrupted by user"):
-            label = "(stopped the agent mid-task)"
-            by_signal[label] = by_signal.get(label, 0) + 1
-            hits.append((day, sess, label, text[:60]))
+            hit(day, sess, "(stopped the agent mid-task)", text[:60])
             continue
         for raw, rx in sigs:
             m = rx.search(text)
             if m:
-                label = raw.replace("\\b", "")
-                by_signal[label] = by_signal.get(label, 0) + 1
                 start = max(0, text.rfind("\n", 0, m.start()) + 1)
-                hits.append((day, sess, label, " ".join(text[start:start + 240].split())))
+                hit(day, sess, raw.replace("\\b", ""), " ".join(text[start:start + 240].split()))
                 break
-    print(f"{len(sessions)} with messages in range, {n_msgs} message(s) typed by the person, {len(hits)} matched\n")
-    for day, sess, sig, snip in hits[: a.max]:
-        print(f"{day}  {sess}  {sig}\n    {snip}")
-    if len(hits) > a.max:
-        print(f"... {len(hits) - a.max} more; raise --max to see them")
+    # Grouped by session, because repeats inside one session are one occurrence:
+    # a correction typed three times in an afternoon is one thing that went wrong.
+    grouped = {}
+    for h in hits:
+        grouped.setdefault(h[1], []).append(h)
+    print(f"{len(sessions)} session(s) with messages in range, {n_msgs} message(s) typed by the person, "
+          f"{len(hits)} matched in {len(grouped)} session(s)\n")
+    shown = 0
+    for sess, hs in grouped.items():
+        if shown >= a.max:
+            break
+        days = sorted({d for d, _, _, _ in hs if d})
+        span = days[0] if len(days) == 1 else f"{days[0]}..{days[-1]}" if days else "undated"
+        print(f"Session {sess}  {span}  {len(hs)} match(es)")
+        for day, _, sig, snip in hs:
+            if shown >= a.max:
+                break
+            shown += 1
+            print(f"  {day}  {sig}\n      {snip}")
+        print()
+    if len(hits) > shown:
+        print(f"... {len(hits) - shown} more; raise --max to see them\n")
     if by_signal:
-        print("\nBy signal:")
-        for sig, n in sorted(by_signal.items(), key=lambda kv: -kv[1]):
-            print(f"  {n:4d}  {sig}")
-    print("\nA match is a place to look, not a finding. The same correction in two sessions is a candidate.")
-
+        print("By signal (matches, distinct sessions, distinct days):")
+        for sig, (n, ss, ds) in sorted(by_signal.items(), key=lambda kv: (-len(kv[1][1]), -kv[1][0])):
+            print(f"  {n:4d} matches  {len(ss):3d} session(s)  {len(ds):3d} day(s)  {sig}")
+    print("\nA match is a place to look, not a finding. Repeats in one session count once, so the sessions column is"
+          "\nthe most a signal can count toward a candidate — and two sessions on the same task are still one."
+          "\nWhat independent means: learning/candidates.md.")
 
 def short(n):
     return f"{n / 1e6:.1f}M" if n >= 1e6 else f"{n / 1e3:.0f}k" if n >= 1e3 else str(n)
