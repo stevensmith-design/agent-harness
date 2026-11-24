@@ -27,6 +27,7 @@ Code is the one domain where the standard is largely mechanical on day one — i
 - Branch and commit hygiene gates
 - Supply-chain gates: pinned actions, lockfiles, template files that must contain only placeholders
 - Deploy modules per target, with the human gate between deploy and traffic cutover
+- Community health files for a **public** repository only: set `project.visibility: public` and `make check-community` lists which of the seven GitHub expects (README, LICENSE, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY, issue and PR templates) are missing; the `harness-community-files` skill scaffolds them, asking for every contact and leaving the licence to the owner. Private repositories see nothing. The kit builds none of this, because most kit workspaces are not public repositories
 
 ## Facts worth not re-deriving
 

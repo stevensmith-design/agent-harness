@@ -49,8 +49,8 @@ Present the inventory and the proposed adapter. Get agreement before Phase 2.
 ## Phase 2 — Config
 
 Run `./scripts/harness-init.sh --dry-run` with every answer as an argument
-(`--adapter --name --stack --src --tests --ui --datastore --level`; see
-`--help`), read the plan, then run it again without `--dry-run`. Agents pass
+(`--adapter --name --stack --src --tests --ui --datastore --level`, plus
+`--visibility public` only if the owner says the repository is public; see `--help`), read the plan, then run it again without `--dry-run`. Agents pass
 arguments; they never type into a prompt. Then verify by
 hand: `project.src`, `project.tests`, `project.product_paths`, every
 `surfaces[].paths` glob, and every

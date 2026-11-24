@@ -5,7 +5,7 @@
   "approvalClass": "human",
   "trust": "self_reported",
   "approverAction": {
-    "actorId": "human:steven",
+    "actorId": "human:alex",
     "principalKind": "human",
     "at": "2026-08-27T12:00:00Z"
   },
