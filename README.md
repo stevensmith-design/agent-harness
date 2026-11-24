@@ -229,6 +229,7 @@ person actually opens with, does the right kit skill claim it? Kept outside
 - Found a problem or have a lesson worth sharing back? Open an issue. Both
   harnesses include an upstream-feedback procedure that drafts a sanitised
   proposal for you to post.
+- Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) · security reports: [`SECURITY.md`](SECURITY.md).
 
 ## Licence
 

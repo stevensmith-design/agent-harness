@@ -1,0 +1,61 @@
+name: Harness lesson
+description: A lesson from your own harness that might help everyone's, drafted with the upstream-feedback procedure.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Draft this with the upstream-feedback procedure (`upstream-feedback` in the kit, `harness-upstream-feedback` in the universal harness), then paste the sections below.
+        **Synthetic examples only.** No client names, personal data, secrets, internal links or proprietary content.
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part?
+      options: [kit, universal, both]
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: Observed failure
+      description: What the harness allowed, or failed to make visible.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it generalises
+      description: Why unrelated projects could run into it.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal synthetic reproduction
+      description: Invented inputs only.
+      render: text
+  - type: textarea
+    id: change
+    attributes:
+      label: Proposed change
+      description: The smallest change in the layer that owns it, plus what must stay the same.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: What the improved harness must catch, and what it must still allow.
+  - type: input
+    id: evidence
+    attributes:
+      label: Local evidence
+      description: Counts and dates from your retro, with no project identifiers.
+      placeholder: e.g. 3 occurrences across 2 sessions, Sept–Oct
+  - type: checkboxes
+    id: sanitised
+    attributes:
+      label: Disclosure
+      options:
+        - label: Everything above is synthetic or sanitised, and contains no client data, personal data, secrets or internal paths.
+          required: true

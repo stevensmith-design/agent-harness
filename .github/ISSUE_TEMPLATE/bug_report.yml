@@ -1,0 +1,59 @@
+name: Bug
+description: A script, gate, hook or installer didn't work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste real secrets, tokens, client names or private paths.** Replace them with fake values.
+        Found a way past a gate, or an installer that overwrites or leaks files? Use the private security report instead (see SECURITY.md).
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part?
+      options: [kit, universal, eval]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: The kit's version is at the top of kit/README.md. For universal or eval, give the commit you installed from.
+      placeholder: e.g. v0.16.0, or 2d4587a
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: OS and bash version
+      description: The kit runs on macOS's bash 3.2 as well as on Linux, so both matter. `bash --version | head -1`
+      placeholder: e.g. macOS 15.5, GNU bash 3.2.57
+    validations:
+      required: true
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host tool
+      options: [Claude Code, Cursor, Copilot, Codex, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: ran
+    attributes:
+      label: What did you run?
+      placeholder: The exact command, or which skill or procedure.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output of make check or doctor.sh
+      description: "`make check` in a universal install, or `bash scripts/doctor.sh` in a kit install. Fake values only."
+      render: text

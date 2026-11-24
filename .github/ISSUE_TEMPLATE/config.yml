@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem (private)
+    url: https://github.com/stevensmith-design/agent-harness/blob/main/SECURITY.md
+    about: A gate bypass, a hook that fails open, an installer that overwrites or leaks files, or a scanner that misses something. Please don't open a public issue.
