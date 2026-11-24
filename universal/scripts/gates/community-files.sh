@@ -9,11 +9,18 @@
 # arrives as a public issue.
 #
 # What this proves: each of the seven is present in a place GitHub reads (the
-# root, docs/ or .github/), and none still carries a {{PLACEHOLDER}} from the
-# harness's templates or is still the harness's own README.
+# root, docs/ or .github/, whatever the case of its name), and none still
+# carries a {{PLACEHOLDER}} from the harness's templates or is still the
+# harness's own README. The harness's own docs/security.md does not count as a
+# security policy (see community_locate in lib.sh).
 # What it CANNOT prove: that the contents are right — that the contact address
 # is monitored, that the licence is the one the owner meant, or that private
 # vulnerability reporting is switched on in the repository settings.
+#
+# It sees only this repository. GitHub can also apply default community files
+# from the public `.github` repository of the owning account or organisation;
+# a project relying on those will be reported "missing" here. That is expected,
+# and project.community_files: off is the owner's choice to make.
 #
 # Silent unless project.visibility is public. A private repository — most
 # client work — sees no output and no change in exit status.

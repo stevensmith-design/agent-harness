@@ -7,8 +7,9 @@ files only when its owner asks for them.
 
 - Read by `scripts/community-files.sh scaffold` (run through the
   `harness-community-files` skill), which copies a template only where the
-  project has no file of that kind, fills in the values the owner gave, and
-  leaves every other `{{PLACEHOLDER}}` as it is.
+  project has no file of that kind, and only when the owner gave a value for
+  every `{{PLACEHOLDER}}` in it. Otherwise it skips the file and says which
+  value it needs. The issue templates are written or skipped as one set.
 - Checked by `scripts/gates/community-files.sh`, only when
   `project.visibility: public`.
 

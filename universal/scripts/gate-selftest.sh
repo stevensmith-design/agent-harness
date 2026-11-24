@@ -1476,33 +1476,60 @@ setup ./scripts/sub.sh 's/^  community_files: error$/  community_files: sometime
 run fail "an unrecognised strictness is a config error, not silence" \
   --expect "not a policy" ./scripts/gates/community-files.sh
 
-# Scaffold: existing files win, values are never invented, and a private repo
-# gets nothing.
+# Policy files are matched whatever their case, as GitHub does — except the
+# harness's own docs/security.md, which only shares the name.
+build_repo
+setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
+run pass "the harness's own docs/security.md alone is not a security policy" \
+  --expect "! SECURITY         missing" ./scripts/gates/community-files.sh
+setup bash -c 'printf "# Security\n\nReport privately via https://example.com/security-report\n" > security.md'
+run pass "a lower-case root security.md counts as present" \
+  --expect "✓ SECURITY         security.md" ./scripts/gates/community-files.sh
+setup bash -c 'printf "# Code of conduct\n\nReport to {{CONDUCT_CONTACT}}\n" > code_of_conduct.md'
+run pass "a lower-case code_of_conduct.md counts too, and a placeholder in it is reported" \
+  --expect "code_of_conduct.md still has placeholders: {{CONDUCT_CONTACT}}" ./scripts/gates/community-files.sh
+
+# Scaffold: existing files win, nothing is written without every value it
+# needs, and a private repo gets nothing.
 build_repo
 run fail "scaffold refuses on a private repository" \
-  --expect "nothing was written" ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo
+  --expect "nothing was written" ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo --set REPOSITORY_URL=https://example.com/acme/demo --set CONDUCT_CONTACT=https://example.com/conduct-report --set SECURITY_CONTACT=https://example.com/security-report
 run pass "and wrote nothing" bash -c '[ ! -e CODE_OF_CONDUCT.md ] && [ ! -e SECURITY.md ]'
 setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
 setup ./scripts/sub.sh 's/^  community_files: warn$/  community_files: error/' harness.config.yaml
 setup bash -c 'printf "# Our own contributing guide\n" > CONTRIBUTING.md'
+run pass "--dry-run shows which files would be skipped for a missing value" \
+  --expect "CODE_OF_CONDUCT  not written: needs CONDUCT_CONTACT" \
+  ./scripts/community-files.sh scaffold --dry-run --set PROJECT_NAME=Demo
+run pass "and the dry run wrote nothing" bash -c '[ ! -e CODE_OF_CONDUCT.md ] && [ ! -e .github/ISSUE_TEMPLATE ]'
+run pass "a code of conduct with no contact is not written" \
+  --expect "CODE_OF_CONDUCT  not written: needs CONDUCT_CONTACT" \
+  ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo
+run pass "the issue-template set without REPOSITORY_URL is skipped as a whole" \
+  bash -c '[ ! -e CODE_OF_CONDUCT.md ] && [ ! -e SECURITY.md ] && [ ! -e .github/ISSUE_TEMPLATE ]'
 run pass "an existing CONTRIBUTING is reported present, not replaced" \
   --expect "present — CONTRIBUTING.md, left as it is" \
-  ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo --set REPOSITORY_URL=https://example.com/acme/demo
+  ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo --set REPOSITORY_URL=https://example.com/acme/demo --set CONDUCT_CONTACT=https://example.com/conduct-report --set SECURITY_CONTACT=https://example.com/security-report
 run pass "and is byte-for-byte what it was" \
   bash -c '[ "$(cat CONTRIBUTING.md)" = "# Our own contributing guide" ]'
-run fail "a value nobody gave stays a placeholder, and the check says so" \
-  --expect "{{CONDUCT_CONTACT}}" ./scripts/gates/community-files.sh
-run pass "the scaffold wrote the value it was given" \
-  --expect "Demo follows the" cat CODE_OF_CONDUCT.md
-setup bash -c './scripts/sub.sh "s|{{CONDUCT_CONTACT}}|https://example.com/conduct-report|" CODE_OF_CONDUCT.md && ./scripts/sub.sh "s|{{SECURITY_CONTACT}}|https://example.com/security-report|" SECURITY.md'
+run pass "with every value given, each file is written with it" \
+  --expect "contact the maintainers privately at https://example.com/conduct-report" cat CODE_OF_CONDUCT.md
+run pass "and the issue-template config carries the repository URL" \
+  --expect "url: https://example.com/acme/demo/security/policy" cat .github/ISSUE_TEMPLATE/config.yml
 setup bash -c 'printf "# Demo\n" > README.md && printf "MIT License\n" > LICENSE'
 run pass "a public repository with all seven present and filled in passes" \
   --expect "checked 7, all present" ./scripts/gates/community-files.sh
 build_repo
 setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
+setup bash -c 'printf "Contact {{CONDUCT_CONTACT}}\n" > CODE_OF_CONDUCT.md'
+setup ./scripts/sub.sh 's/^  community_files: warn$/  community_files: error/' harness.config.yaml
+run fail "a placeholder left in a hand-made file fails the check" \
+  --expect "{{CONDUCT_CONTACT}}" ./scripts/gates/community-files.sh
+build_repo
+setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
 setup bash -c 'mkdir -p .github/ISSUE_TEMPLATE && printf "blank_issues_enabled: true\n" > .github/ISSUE_TEMPLATE/config.yml'
 run fail "a destination that already exists stops the scaffold before any write" \
-  --expect "nothing was written" ./scripts/community-files.sh scaffold
+  --expect "nothing was written" ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo --set REPOSITORY_URL=https://example.com/acme/demo --set CONDUCT_CONTACT=https://example.com/conduct-report --set SECURITY_CONTACT=https://example.com/security-report
 run pass "so not even the files before it were written" \
   bash -c '[ ! -e CODE_OF_CONDUCT.md ] && [ "$(cat .github/ISSUE_TEMPLATE/config.yml)" = "blank_issues_enabled: true" ]'
 run fail "a value carrying a placeholder is refused" \

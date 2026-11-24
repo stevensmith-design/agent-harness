@@ -13,8 +13,12 @@
 #     location GitHub reads — is reported as present and never replaced, merged
 #     or touched. Like install.sh, it checks every destination before writing
 #     any of them, and refuses rather than overwriting.
-#   - Nothing is invented. A {{PLACEHOLDER}} with no --set value stays in the file
-#     as written, and the check keeps reporting it until a person fills it in.
+#   - Nothing is invented, and nothing half-finished is written. A file is
+#     written only when every {{PLACEHOLDER}} in it has a --set value; otherwise
+#     it is skipped and reported as "not written: needs <KEY>". A code of
+#     conduct with no way to report is worse than none, because it looks done.
+#     Files that only work together (the issue-template set) are written or
+#     skipped as one.
 #   - No owner decisions. There is no LICENSE or README template: the licence is
 #     the owner's choice and the README is the owner's description.
 #
@@ -89,8 +93,26 @@ templates_for() {
   esac
 }
 
+# given <KEY> — 0 if the owner supplied a value for KEY.
+given() {
+  local kv
+  for kv in ${SETS[@]+"${SETS[@]}"}; do [ "${kv%%=*}" = "$1" ] && return 0; done
+  return 1
+}
+# needs <files...> — the placeholders in these templates nobody gave a value
+# for, space-separated, or nothing.
+needs() {
+  local k out=""
+  for k in $( cd "$TEMPLATES" && grep -h -o -E -e '\{\{[A-Z][A-Z0-9_]*\}\}' -- "$@" 2>/dev/null \
+                | tr -d '{}' | LC_ALL=C sort -u ); do
+    given "$k" || out="$out $k"
+  done
+  printf '%s' "${out# }"
+}
+
 # --- Plan, then preflight every destination, then write ----------------------
 plan=()
+skipped=0
 for kind in $COMMUNITY_KINDS; do
   label=$(community_label "$kind")
   have=$(community_locate "$kind")
@@ -108,12 +130,21 @@ for kind in $COMMUNITY_KINDS; do
     readme)  warn "$(printf '%-16s' "$label") missing — not scaffolded: only the owner can describe the project"; continue ;;
     pr_template) warn "$(printf '%-16s' "$label") missing — the harness ships .github/pull_request_template.md; restore it from the harness"; continue ;;
   esac
+  for f in $files; do
+    [ -f "$TEMPLATES/$f" ] || fail "template missing: .harness/templates/community/$f. Nothing was written."
+  done
+  # shellcheck disable=SC2086  # $files is a space-separated list of fixed names
+  missing=$(needs $files)
+  if [ -n "$missing" ]; then
+    skipped=$((skipped + 1))
+    warn "$(printf '%-16s' "$label") not written: needs $(printf '%s' "$missing" | sed 's/ /, /g')"
+    continue
+  fi
   for f in $files; do plan+=("$f"); done
 done
 
 collide=()
 for f in ${plan[@]+"${plan[@]}"}; do
-  [ -f "$TEMPLATES/$f" ] || fail "template missing: .harness/templates/community/$f. Nothing was written."
   if [ -e "$HARNESS_ROOT/$f" ] || [ -L "$HARNESS_ROOT/$f" ]; then collide+=("$f"); fi
 done
 if [ "${#collide[@]}" -gt 0 ]; then
@@ -123,7 +154,11 @@ if [ "${#collide[@]}" -gt 0 ]; then
 fi
 
 if [ "${#plan[@]}" -eq 0 ]; then
-  ok "nothing to scaffold — every community file this harness has a template for is present"
+  if [ "$skipped" -gt 0 ]; then
+    ok "nothing written — every missing file still needs a value; pass it with --set KEY=VALUE"
+  else
+    ok "nothing to scaffold — every community file this harness has a template for is present"
+  fi
   exit 0
 fi
 
@@ -147,11 +182,6 @@ PY
 done
 [ "$DRY" = 0 ] || { ok "dry run — nothing was written"; exit 0; }
 
-left=$( cd "$HARNESS_ROOT" && grep -o -E -e '\{\{[A-Z][A-Z0-9_]*\}\}' -- "${plan[@]}" 2>/dev/null | LC_ALL=C sort -u ) || true
-if [ -n "$left" ]; then
-  warn "placeholders still to fill in (no value was given, so none was invented):"
-  printf '%s\n' "$left" | sed 's/^/    /' >&2
-fi
 if [ "$wrote_security" = 1 ]; then
   info "If SECURITY.md sends reporters to GitHub's private vulnerability reporting, turn it on"
   info "yourself: Settings → Code security → Private vulnerability reporting. The harness"

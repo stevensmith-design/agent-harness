@@ -36,6 +36,12 @@ Report that list to the owner as it is. A file the project already has is
 **present**, even if it is short or you would write it differently. It is
 theirs. Do not offer to replace or merge it.
 
+The check sees only this repository. GitHub can also apply **default community
+files** from the public `.github` repository of the account or organisation that
+owns it. A project that relies on those defaults will see "missing" here. That
+is expected, not a fault. If the owner wants to keep using the defaults, setting
+`project.community_files: off` is their choice to make.
+
 ## 2 · Explain what each missing one is for
 
 Only for the ones that are missing, in a sentence each. Many owners haven't met
@@ -78,10 +84,14 @@ only those:
   value from `git remote get-url origin`, but the owner confirms it.
 
 **Never fill one in yourself**, not from the git author, a profile, or another
-file. If the owner doesn't give a value, leave it out: the placeholder stays,
-and the check keeps reporting it.
+file. If the owner doesn't give a value, leave it out. **A file is written only
+when every value it needs was given.** Without `CONDUCT_CONTACT`, no code of
+conduct is written, because one with no way to report would look finished. The
+script reports `not written: needs CONDUCT_CONTACT` instead. The issue templates
+need `REPOSITORY_URL` and are written or skipped together, so the set never ends
+up with a broken `config.yml`.
 
-Show the plan, then write:
+Show the plan (the dry run lists what would be written and what would be skipped, and for which value), then write:
 
 ```bash
 ./scripts/community-files.sh scaffold --dry-run --set "PROJECT_NAME=…" --set "CONDUCT_CONTACT=…"
@@ -96,7 +106,8 @@ private repository. If it stops, report what it said. Do not work around it.
 ## 5 · Hand back
 
 - Run `make check-community` again and show its output.
-- List any placeholders still left, and the file each is in.
+- List each file reported `not written: needs …` and the value it is waiting
+  for. Re-run the scaffold with that `--set` once the owner has it.
 - **If SECURITY.md points to private vulnerability reporting, tell the owner to
   turn it on themselves:** Settings → Code security → Private vulnerability
   reporting. It is a repository setting. This skill does not change settings,
