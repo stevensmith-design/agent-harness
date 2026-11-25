@@ -890,6 +890,21 @@ if command -v python3 >/dev/null 2>&1; then
   else
     failures=$((failures + 1)); printf '%s✗ selftest: mine-sessions matched the wrong lines:%s\n%s\n' "$RED" "$RST" "$_mo" >&2
   fi
+  # One correction typed three times in one session is one occurrence, not three.
+  # The output groups by session and counts distinct sessions per signal, so the
+  # retro reads the independent count rather than the line count.
+  _tx2="$TMP/.tx2"; mkdir -p "$_tx2"
+  {
+    printf '%s\n' '{"type":"user","timestamp":"2030-01-02T00:00:01Z","message":{"content":"you used the old template again"}}'
+    printf '%s\n' '{"type":"user","timestamp":"2030-01-02T00:00:02Z","message":{"content":"again, the old template"}}'
+    printf '%s\n' '{"type":"user","timestamp":"2030-01-02T00:00:03Z","message":{"content":"no, again the old template"}}'
+  } > "$_tx2/aaaaaaaa.jsonl"
+  printf '%s\n' '{"type":"user","timestamp":"2030-01-05T00:00:01Z","message":{"content":"the old template again"}}' > "$_tx2/bbbbbbbb.jsonl"
+  check_out "mine-sessions counts repeats in one session once: 4 matches, 2 sessions" "4 matches    2 session(s)    2 day(s)" \
+    python3 scripts/mine-sessions.py --dir "$_tx2" --since 2030-01-01
+  check_out "mine-sessions groups the matches under their session" "Session aaaaaaaa  2030-01-02  3 match(es)" \
+    python3 scripts/mine-sessions.py --dir "$_tx2" --since 2030-01-01
+  rm -rf "$_tx2"
   # --usage counts one API response once, though the host writes it as several records.
   {
     printf '%s\n' '{"type":"assistant","timestamp":"2030-01-02T00:00:04Z","message":{"id":"m1","usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":890,"output_tokens":5},"content":[{"type":"tool_use","id":"t1","name":"Read","input":{"file_path":"AGENTS.md"}}]}}'

@@ -310,7 +310,7 @@ The loop:
 
 1. **Gather evidence** — what actually happened, not what you remember. Run logs, failed checkpoints, rejections, review comments, a short journal written at the end of each session, and the corrections the person typed into the agent's own transcripts. Count it with a script, so the retro opens with numbers rather than impressions.
 2. **Cluster.** Three rejections all saying "too smooth, nothing specific" is one finding, not three.
-3. **Threshold.** A candidate needs **two independent occurrences** (three, plus team agreement, where the rule will bind other people). Once is noise, and a one-off that becomes a rule fires forever on a problem that happened once.
+3. **Threshold.** A candidate needs **two independent occurrences** (three, plus team agreement, where the rule will bind other people) — *independent* as `core/learning/candidates.md` defines it, which is the only definition. Once is noise, and a one-off that becomes a rule fires forever on a problem that happened once.
 4. **Route to the layer that owns it.** Getting this wrong is how a constitution grows to 400 lines and stops being read.
 
 | The failure is… | Destination |
