@@ -46,6 +46,17 @@ project:
   name: <product>
   stack: <stack>            # e.g. "Next.js 15 + TypeScript", "Flutter 3.x", "Expo SDK 52"
   description: <one line>
+  # Who can see this repository: public | private. Asked by harness-init.
+  # public turns on the community-files check (README, LICENSE, CODE_OF_CONDUCT,
+  # CONTRIBUTING, SECURITY, issue and PR templates) and lets the
+  # harness-community-files skill scaffold the missing ones. private — the
+  # default, and right for client work — changes nothing and reports nothing.
+  # reader: scripts/gates/community-files.sh, scripts/community-files.sh
+  visibility: private
+  # On a public repository: warn = report missing or unfinished files and pass ·
+  # error = fail make harness-check until they exist · off = say nothing.
+  # reader: scripts/gates/community-files.sh
+  community_files: warn
   src: src                  # handwritten source root
   tests: tests              # test root
   # Paths owned by the product rather than by the harness. The finish reminder

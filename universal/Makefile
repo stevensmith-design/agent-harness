@@ -91,7 +91,7 @@ check-overlay-gates: ## Run the gates declared by any applied overlay
 	done
 check-all: lint format-check typecheck test check-secrets check-tokens check-design
 
-harness-check: check-data check-spec check-budget check-branch check-rules check-supply check-skills check-product check-invariants check-learning check-api check-agreements check-policy check-protected check-hooks harness-sync-check ci-gen-check check-overlay-gates ## Harness governance and integrity; run when harness files change
+harness-check: check-data check-spec check-budget check-branch check-rules check-supply check-skills check-product check-invariants check-learning check-api check-agreements check-policy check-protected check-hooks check-community harness-sync-check ci-gen-check check-overlay-gates ## Harness governance and integrity; run when harness files change
 	@./scripts/verify-harness.sh --level 2 --ci
 
 lint: ## Static analysis (adapter)
@@ -155,6 +155,10 @@ check-budget: ## Instruction-file size budgets
 	@./scripts/gates/instruction-budget.sh
 check-hooks: ## Every hook declares the CI gate that enforces the same rule
 	@./scripts/gates/hook-parity.sh
+check-community: ## Public repos only: community health files present and filled in (silent when private)
+	@./scripts/gates/community-files.sh
+community-files: ## Scaffold missing community files: make community-files ARGS='--set PROJECT_NAME=… --dry-run'
+	@./scripts/community-files.sh scaffold $(ARGS)
 check-evidence: ## A run that changed source left an evidence record (warns locally, fails in CI)
 	@./scripts/gates/evidence.sh
 findings: ## Findings on this branch, with stale ones flagged

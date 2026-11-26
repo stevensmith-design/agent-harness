@@ -21,7 +21,7 @@
 #
 #   scripts/emit-evidence.sh <operation> <actor> <result> [detail]
 #     operation: check | verify | review | approval | closure | execute_tool
-#     actor:     an id — "agent:claude", "human:steven", "runner:ci"
+#     actor:     an id — "agent:claude", "human:alex", "runner:ci"
 #     result:    pass | fail | not_verified | blocked
 #                not_verified = the check could not run, or ran over a stub. It
 #                lets work continue and never counts as done (lib.sh strict()).
@@ -38,7 +38,7 @@
 #
 # A `human:` id is self_reported because nothing here authenticates it: the
 # caller supplies the string. Any agent that can run this script can pass
-# `human:steven`.
+# `human:alex`.
 #
 # The other three values — independent_reviewer, authenticated_human,
 # external_policy — cannot be produced by this script AT ALL, and there is

@@ -95,7 +95,9 @@ overwriting them, and stops on the first failed gate.
 │   │          instruction-budget,branch-hygiene,rule-coverage,supply-chain,
 │   │          dependency-safety,skill-frontmatter,skill-trust,skills-integrity,
 │   │          requirements,policy,design-system,
-│   │          hook-parity,evidence,invariants,learning,api-contract,api-agreements}.sh
+│   │          hook-parity,evidence,invariants,learning,api-contract,api-agreements,
+│   │          community-files}.sh
+│   ├── community-files.sh          scaffold missing community files from .harness/templates/community — public repos only, never overwrites
 │   ├── ci/pr-body.sh               the PR body carries evidence and a Not verified section
 │   ├── render-audit.mjs            measures the rendered UI (tap targets, text, overflow, overlap) + contact sheet
 │   ├── declare-intent.sh           branch-bound, reasoned harness-edit unlock
@@ -138,7 +140,8 @@ overwriting them, and stops on the first failed gate.
 ├── evals/                          OPT-IN L4 — cases + vendor-free runner
 │   ├── run-evals.sh                exit 2 = ungraded judge scorers (not a pass)
 │   └── grade.sh                    records a verdict, bound to the rubric it judged
-└── .harness/                       OPT-IN L3 — workflows, lifecycle, schemas, fixtures, validator
+└── .harness/                       OPT-IN L3 — workflows, lifecycle, schemas, fixtures, validator;
+                                    templates/community/ — inert until the community-files skill copies one
 ```
 
 ★ = the two files everything else derives from.

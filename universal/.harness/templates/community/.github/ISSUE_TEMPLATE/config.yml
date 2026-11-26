@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem (private)
+    url: {{REPOSITORY_URL}}/security/policy
+    about: Please don't open a public issue for a vulnerability. This explains how to report one privately.

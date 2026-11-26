@@ -11,7 +11,7 @@ YES=0; DRY=0
 ADAPTERS="generic|react-web|react-native|flutter|node-api|python-api"
 # One provided-flag per answer: an empty value someone passed is an error to
 # report, while an empty value nobody passed is a question still to resolve.
-for k in adapter name stack src tests ui datastore level; do
+for k in adapter name stack src tests ui datastore level visibility; do
   eval "ARG_$k=''; HAS_$k=0"
 done
 set_arg() { # set_arg <--option> <value>
@@ -31,6 +31,9 @@ harness-init — inventory this repo and fill in harness.config.yaml.
   --ui <bool>          true | false — false removes the design-tokens rule
   --datastore <bool>   true | false — false removes the data-access rule
   --level <rung>       L1 | L2 | L3 — L3 also enables governance
+  --visibility <who>   private | public — public turns on the community-files
+                       check. Optional: unanswered, it stays private, which
+                       changes nothing
   --yes                accept the detected default for any answer not given
   --dry-run            validate, then report the planned configuration and
                        rule removals; writes nothing, runs no generator
@@ -54,10 +57,10 @@ while [ $# -gt 0 ]; do
     --yes)     YES=1 ;;
     --dry-run) DRY=1 ;;
     -h|--help) usage; exit 0 ;;
-    --adapter|--name|--stack|--src|--tests|--ui|--datastore|--level)
+    --adapter|--name|--stack|--src|--tests|--ui|--datastore|--level|--visibility)
       [ $# -ge 2 ] || fail "$1 needs a value — see 'scripts/harness-init.sh --help'. Nothing was written."
       set_arg "$1" "$2"; shift ;;
-    --adapter=*|--name=*|--stack=*|--src=*|--tests=*|--ui=*|--datastore=*|--level=*)
+    --adapter=*|--name=*|--stack=*|--src=*|--tests=*|--ui=*|--datastore=*|--level=*|--visibility=*)
       set_arg "${1%%=*}" "${1#*=}" ;;
     *) fail "unknown option '$1' — see 'scripts/harness-init.sh --help'.
     Refusing to run a destructive init on an argument I do not understand. Nothing was written." ;;
@@ -176,6 +179,11 @@ case "$A" in node-api|python-api|generic) ui_default=false ;; *) ui_default=true
 UI=$(answer ui "does this project have a UI? (true/false)" "$ui_default")
 DB=$(answer datastore "does this project own a datastore? (true/false)" "$(has_datastore)")
 LVL=$(answer level "target maturity level (L1|L2|L3)" "L2")
+# Visibility is the one answer that defaults without --yes. Its default,
+# private, is the answer that changes nothing — no check, no warning — so an
+# unanswered question cannot switch anything on that the owner did not ask for.
+VIS=$(answer visibility "is this repository public or private? (private/public)" "$(HARNESS_CFG_OPTIONAL=1 cfg project.visibility private)")
+[ -n "$VIS" ] || [ "$HAS_visibility" = 1 ] || VIS=$(HARNESS_CFG_OPTIONAL=1 cfg project.visibility private)
 
 # Validate everything before anything is written. These values reach a YAML
 # file, a sed replacement in AGENTS.md and rm paths, so the allowed characters
@@ -189,6 +197,7 @@ check tests     "$T"     "$PATH_RE"                         "a relative director
 check ui        "$UI"    '^(true|false)$'                   "exactly true or false"
 check datastore "$DB"    '^(true|false)$'                   "exactly true or false"
 check level     "$LVL"   '^L[123]$'                         "L1, L2 or L3"
+check visibility "$VIS"  '^(private|public)$'               "exactly private or public"
 for pair in "src:$S" "tests:$T"; do
   case "/${pair#*:}/" in */../*|*/./*) bad "--${pair%%:*} '${pair#*:}' must not contain . or .. segments" ;; esac
 done
@@ -218,6 +227,14 @@ set_cfg project name "$N"
 set_cfg project stack "\"$STACK\""
 set_cfg project src "$S"
 set_cfg project tests "$T"
+if [ "$DRY" = 1 ] || cfg_has project.visibility; then
+  set_cfg project visibility "$VIS"
+elif [ "$VIS" = public ]; then
+  # set_cfg only rewrites a key that exists. A config from before this key
+  # would drop the answer without a word, and the repo would stay private.
+  warn "harness.config.yaml has no project.visibility key (it predates it) — add"
+  warn "    'visibility: public' and 'community_files: warn' under project: by hand."
+fi
 set_cfg design enabled "$UI"
 set_cfg design tokens_path "$S/theme"
 [ "$LVL" = "L3" ] && set_cfg governance enabled true
@@ -281,4 +298,5 @@ case "$A" in
   python-api)
     echo "    make skills-add REPO=anthropics/skills SKILL=skills/webapp-testing                         # Playwright E2E" ;;
 esac
+[ "$VIS" = public ] && info "public repository: 'make check-community' lists the community files it is missing; the harness-community-files skill scaffolds them on request"
 info "next: fill in scripts/adapters/$A.sh if needed, then run 'make check'"

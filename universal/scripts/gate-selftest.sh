@@ -786,7 +786,7 @@ run fail "an agent-authored approval that only CLAIMS a human is rejected" \
     --file .harness/fixtures/invalid/approval-self-reported-as-human.json
 
 # Every field a schema can check is well-formed in that fixture — actorId
-# "human:steven", principalKind "human". Only the trust rung separates it from
+# "human:alex", principalKind "human". Only the trust rung separates it from
 # the valid one, which is the whole point.
 build_repo
 run pass "the same record shape IS accepted when it claims authenticated_human" \
@@ -1456,6 +1456,91 @@ run pass "and groups the matches under their session" --expect "Session aaaaaaaa
 setup rm -f "$WORK/tx/s.jsonl"
 run fail "and an empty transcript folder is not a clean result" --expect "not a clean result" \
   python3 scripts/mine-sessions.py --dir "$WORK/tx"
+
+hdr "community files — public repositories only, and nothing invented"
+
+# The opt-in is the whole contract: a private repository (the default, and most
+# client work) must see no output at all, not a quieter warning.
+build_repo
+run pass "a private repository hears nothing from the check" \
+  bash -c 'out=$(./scripts/gates/community-files.sh 2>&1) && [ -z "$out" ]'
+setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
+run pass "a public repository with files missing is told, with the denominator" \
+  --expect "checked 7, 6 missing or unfinished" ./scripts/gates/community-files.sh
+run pass "and the harness's own README is not the project's README" \
+  --expect "is still the harness's own README" ./scripts/gates/community-files.sh
+setup ./scripts/sub.sh 's/^  community_files: warn$/  community_files: error/' harness.config.yaml
+run fail "with community_files: error, a missing file fails the check" \
+  --expect "missing" ./scripts/gates/community-files.sh
+setup ./scripts/sub.sh 's/^  community_files: error$/  community_files: sometimes/' harness.config.yaml
+run fail "an unrecognised strictness is a config error, not silence" \
+  --expect "not a policy" ./scripts/gates/community-files.sh
+
+# Policy files are matched whatever their case, as GitHub does — except the
+# harness's own docs/security.md, which only shares the name.
+build_repo
+setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
+run pass "the harness's own docs/security.md alone is not a security policy" \
+  --expect "! SECURITY         missing" ./scripts/gates/community-files.sh
+setup bash -c 'printf "# Security\n\nReport privately via https://example.com/security-report\n" > security.md'
+run pass "a lower-case root security.md counts as present" \
+  --expect "✓ SECURITY         security.md" ./scripts/gates/community-files.sh
+setup bash -c 'printf "# Code of conduct\n\nReport to {{CONDUCT_CONTACT}}\n" > code_of_conduct.md'
+run pass "a lower-case code_of_conduct.md counts too, and a placeholder in it is reported" \
+  --expect "code_of_conduct.md still has placeholders: {{CONDUCT_CONTACT}}" ./scripts/gates/community-files.sh
+
+# Scaffold: existing files win, nothing is written without every value it
+# needs, and a private repo gets nothing.
+build_repo
+run fail "scaffold refuses on a private repository" \
+  --expect "nothing was written" ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo --set REPOSITORY_URL=https://example.com/acme/demo --set CONDUCT_CONTACT=https://example.com/conduct-report --set SECURITY_CONTACT=https://example.com/security-report
+run pass "and wrote nothing" bash -c '[ ! -e CODE_OF_CONDUCT.md ] && [ ! -e SECURITY.md ]'
+setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
+setup ./scripts/sub.sh 's/^  community_files: warn$/  community_files: error/' harness.config.yaml
+setup bash -c 'printf "# Our own contributing guide\n" > CONTRIBUTING.md'
+run pass "--dry-run shows which files would be skipped for a missing value" \
+  --expect "CODE_OF_CONDUCT  not written: needs CONDUCT_CONTACT" \
+  ./scripts/community-files.sh scaffold --dry-run --set PROJECT_NAME=Demo
+run pass "and the dry run wrote nothing" bash -c '[ ! -e CODE_OF_CONDUCT.md ] && [ ! -e .github/ISSUE_TEMPLATE ]'
+run pass "a code of conduct with no contact is not written" \
+  --expect "CODE_OF_CONDUCT  not written: needs CONDUCT_CONTACT" \
+  ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo
+run pass "the issue-template set without REPOSITORY_URL is skipped as a whole" \
+  bash -c '[ ! -e CODE_OF_CONDUCT.md ] && [ ! -e SECURITY.md ] && [ ! -e .github/ISSUE_TEMPLATE ]'
+run pass "an existing CONTRIBUTING is reported present, not replaced" \
+  --expect "present — CONTRIBUTING.md, left as it is" \
+  ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo --set REPOSITORY_URL=https://example.com/acme/demo --set CONDUCT_CONTACT=https://example.com/conduct-report --set SECURITY_CONTACT=https://example.com/security-report
+run pass "and is byte-for-byte what it was" \
+  bash -c '[ "$(cat CONTRIBUTING.md)" = "# Our own contributing guide" ]'
+run pass "with every value given, each file is written with it" \
+  --expect "contact the maintainers privately at https://example.com/conduct-report" cat CODE_OF_CONDUCT.md
+run pass "and the issue-template config carries the repository URL" \
+  --expect "url: https://example.com/acme/demo/security/policy" cat .github/ISSUE_TEMPLATE/config.yml
+setup bash -c 'printf "# Demo\n" > README.md && printf "MIT License\n" > LICENSE'
+run pass "a public repository with all seven present and filled in passes" \
+  --expect "checked 7, all present" ./scripts/gates/community-files.sh
+build_repo
+setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
+setup bash -c 'printf "Contact {{CONDUCT_CONTACT}}\n" > CODE_OF_CONDUCT.md'
+setup ./scripts/sub.sh 's/^  community_files: warn$/  community_files: error/' harness.config.yaml
+run fail "a placeholder left in a hand-made file fails the check" \
+  --expect "{{CONDUCT_CONTACT}}" ./scripts/gates/community-files.sh
+build_repo
+setup ./scripts/sub.sh 's/^  visibility: private$/  visibility: public/' harness.config.yaml
+setup bash -c 'mkdir -p .github/ISSUE_TEMPLATE && printf "blank_issues_enabled: true\n" > .github/ISSUE_TEMPLATE/config.yml'
+run fail "a destination that already exists stops the scaffold before any write" \
+  --expect "nothing was written" ./scripts/community-files.sh scaffold --set PROJECT_NAME=Demo --set REPOSITORY_URL=https://example.com/acme/demo --set CONDUCT_CONTACT=https://example.com/conduct-report --set SECURITY_CONTACT=https://example.com/security-report
+run pass "so not even the files before it were written" \
+  bash -c '[ ! -e CODE_OF_CONDUCT.md ] && [ "$(cat .github/ISSUE_TEMPLATE/config.yml)" = "blank_issues_enabled: true" ]'
+run fail "a value carrying a placeholder is refused" \
+  --expect "contains a placeholder" ./scripts/community-files.sh scaffold --set "PROJECT_NAME={{X}}"
+build_repo
+run pass "harness-init takes --visibility" \
+  --expect "would set project.visibility = public" init_no_tty --dry-run "${INIT_ARGS[@]}" --ui false --visibility public
+run pass "and leaves it private when nobody answers" \
+  --expect "would set project.visibility = private" init_no_tty --dry-run "${INIT_ARGS[@]}" --ui false
+run pass "and rejects anything else before writing" \
+  --expect "--visibility 'internal' is not allowed" init_untouched 1 --dry-run "${INIT_ARGS[@]}" --ui false --visibility internal
 
 hdr "install ships what the repository would commit, and reads the target's branch"
 

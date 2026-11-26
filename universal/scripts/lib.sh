@@ -479,3 +479,83 @@ repo_files() {
     git -C "$HARNESS_ROOT" -c core.quotepath=false ls-files --others --exclude-standard 2>/dev/null || true
   } | sed 's/^"//; s/"$//' | sort -u | grep -v '^$' || true
 }
+
+# --- Community health files ------------------------------------------------------
+# One definition of "this project already has one", shared by the check
+# (scripts/gates/community-files.sh) and the scaffolder (scripts/community-files.sh)
+# so they cannot disagree. GitHub reads these from the root, docs/ or .github/,
+# and matches names without regard to case; a file in any of those counts.
+COMMUNITY_KINDS="readme license code_of_conduct contributing security issue_templates pr_template"
+
+community_label() {
+  case "$1" in
+    readme) echo "README" ;; license) echo "LICENSE" ;;
+    code_of_conduct) echo "CODE_OF_CONDUCT" ;; contributing) echo "CONTRIBUTING" ;;
+    security) echo "SECURITY" ;; issue_templates) echo "issue templates" ;;
+    pr_template) echo "PR template" ;;
+  esac
+}
+
+# _community_find <-name|-iname> <dirs...> -- <patterns...> — every FILE in
+# those directories (not below them) matching any pattern, in GitHub's order of
+# preference: root, then docs/, then .github/. Callers take the first that counts.
+_community_find() {
+  local test="$1" dirs=() pats=() d p
+  shift
+  while [ $# -gt 0 ] && [ "$1" != "--" ]; do dirs+=("$1"); shift; done
+  shift
+  pats=("$@")
+  for d in "${dirs[@]}"; do
+    [ -d "$HARNESS_ROOT/$d" ] || continue
+    for p in "${pats[@]}"; do
+      ( cd "$HARNESS_ROOT" && find "$d" -mindepth 1 -maxdepth 1 -type f "$test" "$p" 2>/dev/null ) \
+        | sed 's|^\./||' | LC_ALL=C sort
+    done
+  done
+}
+
+# _community_not_harness <first-line> — drop paths whose first line marks them
+# as the harness's own document, which only shares a name with the policy file.
+_community_not_harness() {
+  local p
+  while IFS= read -r p; do
+    [ "$(head -1 "$HARNESS_ROOT/$p" 2>/dev/null)" = "$1" ] || printf '%s\n' "$p"
+  done
+}
+
+# community_locate <kind> — prints the project-relative path of the file (or
+# directory) that satisfies <kind>, or nothing when the project has none.
+community_locate() {
+  local hit
+  case "$1" in
+    # Every name is matched whatever its case, as GitHub does. The harness ships
+    # docs/security.md — its own notes, first line "# Security in this harness",
+    # not a vulnerability policy — so that one file is excluded by its content,
+    # the same way the check recognises the harness's own README. Nothing the
+    # harness ships collides with CODE_OF_CONDUCT or CONTRIBUTING.
+    readme)          _community_find -iname . docs .github -- 'README' 'README.*' | sed -n 1p ;;
+    license)         _community_find -iname . -- 'LICENSE' 'LICENSE.*' 'LICENCE' 'LICENCE.*' 'COPYING' 'COPYING.*' | sed -n 1p ;;
+    code_of_conduct) _community_find -iname . docs .github -- 'CODE_OF_CONDUCT' 'CODE_OF_CONDUCT.*' | sed -n 1p ;;
+    contributing)    _community_find -iname . docs .github -- 'CONTRIBUTING' 'CONTRIBUTING.*' | sed -n 1p ;;
+    security)        _community_find -iname . docs .github -- 'SECURITY' 'SECURITY.*' \
+                       | _community_not_harness "# Security in this harness" | sed -n 1p ;;
+    pr_template)
+      hit=$(_community_find -iname . docs .github -- 'pull_request_template.md' | sed -n 1p)
+      [ -n "$hit" ] || for d in .github/PULL_REQUEST_TEMPLATE docs/PULL_REQUEST_TEMPLATE PULL_REQUEST_TEMPLATE; do
+        [ -d "$HARNESS_ROOT/$d" ] && { hit=$d; break; }
+      done
+      [ -z "$hit" ] || printf '%s\n' "$hit" ;;
+    issue_templates)
+      # A template folder counts only if it holds a template; config.yml on its
+      # own configures the chooser and is not one.
+      for d in .github/ISSUE_TEMPLATE docs/ISSUE_TEMPLATE ISSUE_TEMPLATE; do
+        [ -d "$HARNESS_ROOT/$d" ] || continue
+        hit=$( cd "$HARNESS_ROOT" && find "$d" -maxdepth 1 -type f \
+                 \( -iname '*.md' -o -iname '*.yml' -o -iname '*.yaml' \) ! -iname 'config.yml' ! -iname 'config.yaml' \
+               | sed -n 1p )
+        [ -z "$hit" ] || { printf '%s\n' "$d"; return 0; }
+      done
+      _community_find -iname . docs .github -- 'issue_template.md' | sed -n 1p ;;
+    *) fail "community_locate: unknown kind '$1'" ;;
+  esac
+}

@@ -6,5 +6,5 @@
   "surface": "app",
   "risk": "medium",
   "specPath": "specs/012-leave-workspace/spec.md",
-  "authority": { "requestedBy": "human:steven", "reference": "PROJ-118" }
+  "authority": { "requestedBy": "human:alex", "reference": "PROJ-118" }
 }

@@ -239,6 +239,39 @@ not run, or ran over a stub).
   the independent count rather than the line count. `gate-selftest` proves a
   correction typed three times in one session counts as one session.
 
+### Community health files, for public repositories only
+
+- **`project.visibility: public | private`**, asked by `harness-init`
+  (`--visibility`), default `private`. It is the one answer that defaults
+  without `--yes`, because `private` changes nothing. On a private repository
+  nothing below runs or prints.
+- **`make check-community`** (`scripts/gates/community-files.sh`, part of
+  `make harness-check`). On a public repository it checks 7 files GitHub expects:
+  README, LICENSE, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY, issue templates and
+  PR template, in the root, `docs/` or `.github/`, whatever the case of the
+  name; the harness's own `docs/security.md` does not count. It reports any that are
+  missing, still carry a `{{PLACEHOLDER}}`, or are still the harness's own
+  README. `project.community_files: warn` (default) reports and passes; `error`
+  makes it a gate; `off` silences it. It sees only this repository, so a project
+  relying on GitHub's account- or organisation-wide default files is reported as
+  missing; `off` is the owner's choice there.
+- **`harness-community-files` skill** and `scripts/community-files.sh
+  scaffold`. They copy the missing CODE_OF_CONDUCT, CONTRIBUTING, SECURITY and
+  issue templates from `.harness/templates/community/`. A file is written only
+  when the owner gave a value (`--set KEY=VALUE`) for every placeholder in it;
+  otherwise it is skipped as "not written: needs <KEY>", and the issue-template
+  set is skipped as a whole. Existing files win: anything present is
+  reported and left alone, and an existing destination stops the run before any
+  write. There is no LICENSE or README template, and no default contact. The
+  skill reminds the owner that private vulnerability reporting is a repository
+  setting they must turn on themselves.
+- `gate-selftest` covers it: silent when private, flags a public repo with
+  files missing, passes one with all seven filled in, never overwrites, refuses
+  a private scaffold, skips files whose values are missing (also in
+  `--dry-run`), counts a lower-case `security.md` but not the harness's own.
+- Governance fixtures and two script comments use the neutral actor
+  `human:alex`; they ship into installed repos.
+
 ### For installed repos
 
 Copy the changed scripts, `sweep-guard.sh`, both workflows and the evidence
@@ -250,6 +283,16 @@ and `scripts/gate-selftest.sh`, and add `CHANGELOG.md` and `overlays/` to your
 `.prettierignore`.
 For the retro fix, copy `.agents/skills/harness-retro/SKILL.md`,
 `scripts/mine-sessions.py` and `scripts/gate-selftest.sh`.
+
+For community files, copy `scripts/lib.sh`, `scripts/gates/community-files.sh`,
+`scripts/community-files.sh`, `scripts/harness-init.sh`,
+`scripts/gate-selftest.sh`, `.harness/templates/community/` and
+`.agents/skills/harness-community-files/`. Add the `check-community` and
+`community-files` targets to the `Makefile`, with `check-community` in
+`harness-check`. Add these under `project:` in `harness.config.yaml`:
+`visibility: private` and `community_files: warn`. Set `visibility: public`
+only if the repository is public. Then run `make link-skills`. The renamed
+fixture actor needs nothing; copy `.harness/fixtures/` if you want it.
 
 ## 1.16.0 — the learning loop
 
